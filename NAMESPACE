@@ -1,0 +1,8 @@
+exportPattern("^[[:alpha:]]+")
+import("grDevices")
+import("graphics")
+import("stats")
+importFrom("utils", "flush.console", "head", "read.table", "tail",
+               "write.csv", "write.table")
+import("shiny")
+import("zip")
