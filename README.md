@@ -17,7 +17,7 @@
 *3) [**Tutorial**](#tutorial): A step by step walkthrough of the DST interface and example application of the DST;*  
 
 
-#### **Introduction** {#introduction}
+#### **Introduction**
 Stock assessment scientists tasked with providing best scientific advice and managers tasked with transforming this advise into regulation of fishery resources are faced with many challenges. Depleted stocks, diverse incomplete data sets, a changing climate, competing stake holder desires, and uncertain future conditions are just some of these. A robust and frequently utilized tool available to scientists in determining best scientific advice is the stock synthesis 3.24 (SS3) assessment software package. SS3 is built upon a flexible statistical catch at age population model with parameter estimation achieved using AD Model Builder ([ADMB](http://www.admb-project.org/)).  
 Key features of SS3 that make it appealing to assessment scientists are its flexible array of optional data inputs allowing estimation of a data-limited age-structured production model or a data-rich model with complex spatio-temporal variation in population and fishing fleet dynamics. These features have allowed SS3 to be implemented in over 60 formal stock assessments in the United States, Europe, and the Asia Pacific. SS3 has extensive capabilities to incorporate complexities including spatio-temporally varying annual catch limits (ACLs), minimum size limits, bag limits, closed seasons/areas, and gear restrictions into the assessment of current and historic stock status. These capabilities have significantly improved stock assessment scientists abilities to provide both absolute estimates of stock status and the uncertainty around these results. One limitation of SS3 has been its capacity for population projection under changing future conditions, where future patterns can only be set to mirror an historic reference period.  
 Increasingly however, SS3 is being used in fisheries with complex and changing fleet behaviors that are being managed using dynamic regulation changes. Current stock assessment protocols using SS3 are limited in there ability to account for potential future changes in management regulations and how these may influence the annual catch limits recommended as best available science. Assessment scientists are therefore forced to provide fixed ACLs even under circumstances that regulations are likely to change. Fishery managers can likewise become frustrated when static ACLs leave them unable to realize the potential benefit or quantify the potential harm of competing regulation proposals. When three or more years can pass between stock assessments for a given species this leaves a large degree of uncertainty surrounding stock status and optimal harvest rates.  
@@ -27,7 +27,7 @@ Some progress towards the automated reading and modification of SS3 files has al
 
 
 
-#### **Methods** {#methods}
+#### **Methods** 
 *Fishery projection:* The goal for interfacing with SS3 was to allow assessment scientists and managers to incorporate the impact of new management actions into ACL projections in order to maximize sustainable harvests and minimize the chances of over-fishing. The multi-year delay between stock assessments requires that the change in fleet dynamics can occur a variable number of years after the end of the assessment data series. These objectives should ideally be achieved without impacting the existing model parameterization and be able to replicate the base model results under the scenario that future fleet dynamics remain unchanged. The methodology we developed was to create a shadow fleet. Under the base scenario of no change in fleet dynamics the shadow fleet is parameterized identically to the true fleet. Under regulation/management change scenarios the pertinent fleet parameters such as retention function inflection point and discard mortality asymptotes will be modified in the shadow fleet to match the new user input values.  
 The modification process proceeds as follows:  
 1) An SS3 model is developed and parameterized using only the true fleet data to obtain a base model. This is the model that would be developed and used for management advise in a standard stock assessment under the assumption of no change.  
@@ -120,8 +120,7 @@ The modification process proceeds as follows:
  &nbsp; &nbsp; (E) Discard mortality.  
  &nbsp; &nbsp; &nbsp; &nbsp; i) Asymptotic discard mortality rate.  
  &nbsp; &nbsp; &nbsp; &nbsp; *(Note: Inflection point and slope are fixed at the base models estimated values)*  
- 
-# {#methods3} 
+
 *File editing automation:* Automated iteration and editing of SS3 files is accomplished using a combination of existing package methods from R4SS and custom functions.  
 1) R4SS functions are used to read, edit, and write.   
  &nbsp; &nbsp; A) Starter files.  
