@@ -165,6 +165,12 @@ prepareAssessment<-function(input,output,session,output.prep,starter.prep,
       prevParLab<-prevParLab+8
       prevParVal<-prevParVal+8
 
+    }else if(control.prep$Size_Select[i,2]==2)
+    {
+      pars.prep$Labels[(prevParLab+1):(prevParLab+8)]<-c(paste0("# selparm[",(prevRow+1):(prevRow+8),"]"))
+      prevRow<-prevRow+8
+      prevParLab<-prevParLab+8
+      prevParVal<-prevParVal+8
     }else if(control.prep$Size_Select[i,2]==0)
     {
       dummyRetain[,3]<-c(-1,0,1,0)

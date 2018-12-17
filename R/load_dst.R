@@ -173,7 +173,7 @@ observeEvent(input$chooseAssessment,{
 
               if(!is.null(input$ManagementTabset)){
                 withProgress(message="Building Management Tab Elements",value=0.1,{
-                  #print("observer 25 ran")
+                  print("observer 25 ran")
                   buildTabElements(input, output, session)
                   observerPool[[2]]$destroy()
                 }
