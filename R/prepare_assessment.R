@@ -99,7 +99,6 @@ prepareAssessment<-function(input,output,session,output.prep,starter.prep,
   forecast.prep$Do_West_Coast_gfish_rebuilder_output<-0
   if(forecast.prep$InputBasis!=-1)
   {
-
     if(forecast.prep$Ncatch>0)
     {
       forecast.prep$ForeCatch$Basis<-forecast.prep$InputBasis
@@ -107,6 +106,17 @@ prepareAssessment<-function(input,output,session,output.prep,starter.prep,
     forecast.prep$InputBasis<--1
   }
 
+  if(forecast.prep$Ncatch>0)
+  {
+    for(i in 1:length(forecast.prep$ForeCatch$Basis))
+    {
+      if(forecast.prep$ForeCatch$Basis[i]==2 && data.prep$units_of_catch[forecast.prep$ForeCatch$Fleet[i]]==2){
+        forecast.prep$ForeCatch$Basis[i]<-5
+      }else if(forecast.prep$ForeCatch$Basis[i]==3 && data.prep$units_of_catch[forecast.prep$ForeCatch$Fleet[i]]==2){
+        forecast.prep$ForeCatch$Basis[i]<-6
+      }
+    }
+  }
   wrt_forecast(forecast.prep,dir=dir.prep,overwrite = TRUE)
 
   pattern<-matrix(nrow=34,ncol=2)

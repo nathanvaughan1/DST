@@ -23,9 +23,11 @@ wrt_starter <- function(mylist, dir=NULL, file="starter.ss",
   if(mylist$type!="Stock_Synthesis_starter_file"){
     stop("input 'mylist' should be a list with $type=='Stock_Synthesis_starter_file'\n")
   }
+
   # this command will hopefully prevent earlier issues of getting stuck with all R
   # output written to the file after the function crashes before closing connection
   ## on.exit({if(sink.number()>0) sink(); close(zz)})
+
   on.exit({if(sink.number()>0) sink()})
 
   if(is.null(dir)) dir <- getwd() # set to working directory if no input provided

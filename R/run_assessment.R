@@ -749,8 +749,6 @@ duplicateFleets<-function(input, output, session){
     }
   }
 
-
-
   temp<-output.orig$SelSizeAdj[output.orig$SelSizeAdj[,2]>=forecast.orig$Fcast_years[1] & output.orig$SelSizeAdj[,2]<=forecast.orig$Fcast_years[2],]
   temp<-aggregate(temp,list(fleet=temp[,1]),mean)
   temp<-as.matrix(temp[,-c(1,2,3)])
@@ -864,11 +862,21 @@ duplicateFleets<-function(input, output, session){
   newParams<-newParams[rowsCopyCtrl,]
   allRows<-1:row
   sizeRows<-grep("Size",row.names(control.run$Select_Params))
-  sizeFleetRows<-sizeRows[grep(paste("fleet/Survey  ",1:data.orig$Nfleet,sep="",collapse="|"),row.names(control.run$Select_Params[sizeRows,]))]
+
+  if(data.orig$Nsurveys>0){
+    sizeFleetRows<-sizeRows[-grep(paste("fleet/Survey  ",(data.orig$Nfleet+1):(data.orig$Nfleet+data.orig$Nsurveys),sep="",collapse="|"),row.names(control.run$Select_Params[sizeRows,]))]
+  }else{
+    sizeFleetRows<-sizeRows
+  }
+  #sizeFleetRows<-sizeRows[grep(paste("fleet/Survey  ",1:data.orig$Nfleet,sep="",collapse="|"),row.names(control.run$Select_Params[sizeRows,]))]
   sizeSurveyRows<-setdiff(sizeRows,sizeFleetRows)
   sizeNew<-grep("Size",row.names(newParams))
   ageRows<-setdiff(allRows,sizeRows)
-  if(data.orig$Nsurveys>0){ageFleetRows<-ageRows[-grep(paste("fleet/Survey  ",(data.orig$Nfleet+1):(data.orig$Nfleet+data.orig$Nsurveys),sep="",collapse="|"),row.names(control.run$Select_Params[ageRows,]))]}else{ageFleetRows<-ageRows}
+  if(data.orig$Nsurveys>0){
+    ageFleetRows<-ageRows[-grep(paste("fleet/Survey  ",(data.orig$Nfleet+1):(data.orig$Nfleet+data.orig$Nsurveys),sep="",collapse="|"),row.names(control.run$Select_Params[ageRows,]))]
+  }else{
+    ageFleetRows<-ageRows
+  }
   ageSurveyRows<-setdiff(ageRows,ageFleetRows)
 
   control.run$Select_Params<<-rbind(control.run$Select_Params[sizeFleetRows,],
@@ -1133,21 +1141,27 @@ RunTargetForecast<-function(input, output, session){
 
       incProgress(0.1, detail = paste0("Finding MSY")) #0.4 total
       #print("MSY == 2, start search")
-      statusMatrix<-matrix(NA,nrow=4,ncol=30,dimnames = list(c("target SPR","input SPR","achieved SPR","achieved Catch")))
+      statusMatrix<-matrix(NA,nrow=7,ncol=30,dimnames = list(c("target SPR","input SPR","achieved SPR","achieved Catch","last Catch","min Catch","max Catch")))
 
-      statusMatrix[,1]<-c(0,0,0,0)
-      statusMatrix[,2]<-c(1,1,1,0)
-      statusMatrix[1,3]<-0.3
-      statusMatrix[2,3]<-0.3
+      statusMatrix[,1]<-c(0,0,0,0,0,0,0)
+      statusMatrix[,2]<-c(1,1,1,0,0,0,0)
+      TargetVals<-c(0.2,0.3,0.5)
+      TargetVal<-1
+      step<-3
+      statusMatrix[1,step]<-TargetVals[TargetVal]
+      statusMatrix[2,step]<-TargetVals[TargetVal]
       forecast.run$MSY<<-1
       forecast.run$Forecast<<-1
-      forecast.run$SPRtarget<<-as.numeric(statusMatrix[2,3])
+      forecast.run$SPRtarget<<-as.numeric(statusMatrix[2,step])
       wrt_forecast(forecast.run,dir=dir.run,overwrite = TRUE)
-      incProgress(0.05, detail = paste0("Finding MSY - search loop ",1," of probably 10-15 (max 30)")) #0.4 total
+      incProgress(0.05, detail = paste0("Finding MSY - search loop ",step," of probably 10-15 (max 30)- finding Target ",TargetVal," of 3. Running SS3")) #0.4 total
+
+      findingTargets<-TRUE
+      while(findingTargets){
 
       shell(paste("cd /d ",dir.run," && ss3 -nohess",sep=""))
       #print("SS ran successfully 1 :)")
-      incProgress(0.00, detail = paste0("Finding MSY - search loop ",1," of probably 10-15 (max 30). Reading output file")) #0.4 total
+      incProgress(0.00, detail = paste0("Finding MSY - search loop ",step," of probably 10-15 (max 30)- finding Target ",TargetVal," of 3. Reading output file")) #0.4 total
 
       output.read<-FALSE
       output.temp<-NULL
@@ -1163,110 +1177,129 @@ RunTargetForecast<-function(input, output, session){
       }
 
       #print("Output read successfully 1")
-      incProgress(0.00, detail = paste0("Finding MSY - search loop ",1," of probably 10-15 (max 30). Reading catch results")) #0.4 total
+      incProgress(0.00, detail = paste0("Finding MSY - search loop ",step," of probably 10-15 (max 30)- finding Target ",TargetVal," of 3. Reading catch results")) #0.4 total
 
-      statusMatrix[3,3]<-mean(output.run$sprseries$SPR[output.run$sprseries$Year>=input$TargetYears[1] & output.run$sprseries$Year<=input$TargetYears[2]])
+      statusMatrix[3,step]<-mean(output.run$sprseries$SPR[output.run$sprseries$Year>=input$TargetYears[1] & output.run$sprseries$Year<=input$TargetYears[2]])
       Catch<-ReadCatch(output.run,input$TargetYears[1]:input$TargetYears[2])
       Catch<-Catch[Catch[,1]>=input$TargetYears[1] & Catch[,1]<=input$TargetYears[2],]
-      statusMatrix[4,3]<-sum(Catch[,5])/length(unique(Catch[,1]))
+      statusMatrix[4,step]<-sum(Catch[,5])/length(unique(Catch[,1]))
 
-      if(abs(statusMatrix[1,3]-statusMatrix[3,3])>0.05)
-      {
-        statusMatrix[1,4]<-0.3
-        statusMatrix[2,4]<-0.6-statusMatrix[3,3]
+      if(statusMatrix[3,step]<=0.01){statusMatrix[3,step]<=0.01}
+      #print(paste("management year = ",(input$ManagementYearInput+1)))
+      #print(paste("target year = ",(input$TargetYears[1]-1)))
+      CatchAll<-ReadCatch(output.run,(input$ManagementYearInput+1):(input$TargetYears[1]-1))
+      #print("Catch All = ")
+      #print(CatchAll)
+
+      CatchAllAnnual<-aggregate(CatchAll[,5:6],list(CatchAll[,1]),sum,na.rm=TRUE)
+      #print("Catch All Annual= ")
+      #print(CatchAllAnnual)
+      statusMatrix[5,step]<-CatchAllAnnual[1,2]
+      print("Status matrix = ")
+      print(statusMatrix)
+      if(length(min(CatchAllAnnual[,2],na.rm=TRUE))==0){
+        statusMatrix[3,step]<-0
+        statusMatrix[5,step]<-0
+        statusMatrix[6,step]<-0
+        statusMatrix[4,step]<-0
+      }else if(min(CatchAllAnnual[,2],na.rm=TRUE)==Inf){
+        statusMatrix[3,step]<-0
+        statusMatrix[5,step]<-0
+        statusMatrix[6,step]<-0
+        statusMatrix[4,step]<-0
+      }else if(min(CatchAllAnnual[,2],na.rm=TRUE)<=0){
+        statusMatrix[3,step]<-0
+        statusMatrix[5,step]<-0
+        statusMatrix[6,step]<-0
+        statusMatrix[4,step]<-0
       }else{
-        statusMatrix[1,4]<-0.2
-        statusMatrix[2,4]<-0.5-statusMatrix[2,3]
+        statusMatrix[6,step]<-min(CatchAllAnnual[,2])
       }
 
-      forecast.run$SPRtarget<<-as.numeric(statusMatrix[2,4])
-      wrt_forecast(forecast.run,dir=dir.run,overwrite = TRUE)
+      if(length(max(CatchAllAnnual[,2],na.rm=TRUE))==0){
+        statusMatrix[3,step]<-0
+        statusMatrix[5,step]<-0
+        statusMatrix[7,step]<-0
+        statusMatrix[4,step]<-0
+      }else if(max(CatchAllAnnual[,2],na.rm=TRUE)==Inf){
+        statusMatrix[3,step]<-0
+        statusMatrix[5,step]<-0
+        statusMatrix[7,step]<-0
+        statusMatrix[4,step]<-0
+      }else if(max(CatchAllAnnual[,2],na.rm=TRUE)<=0){
+        statusMatrix[3,step]<-0
+        statusMatrix[5,step]<-0
+        statusMatrix[7,step]<-0
+        statusMatrix[4,step]<-0
+      }else{
+        statusMatrix[7,step]<-max(CatchAllAnnual[,2])
+      }
 
-      #print(statusMatrix)
-      incProgress(0.05, detail = paste0("Finding MSY - search loop ",2," of probably 10-15 (max 30)")) #0.4 total
+      if(statusMatrix[3,step]<=0.01)
+      {
+        statusMatrix[3,step]<-0
+        statusMatrix[4,step]<-0
+        statusMatrix[5,step]<-0
+        statusMatrix[6,step]<-0
+        statusMatrix[7,step]<-0
+      }
 
-      shell(paste("cd /d ",dir.run," && ss3 -nohess",sep=""))
-      #print("SS ran successfully 2 :)")
-      incProgress(0.00, detail = paste0("Finding MSY - search loop ",2," of probably 10-15 (max 30). Reading output file")) #0.4 total
+      # if(statusMatrix[6,step]<0.9*min(c(statusMatrix[4,step],statusMatrix[5,step]),na.rm=TRUE)){
+      #
+      #   statusMatrix[4,step]<-0
+      # }
+      # if(statusMatrix[7,step]>1.1*max(c(statusMatrix[4,step],statusMatrix[5,step]),na.rm=TRUE)){
+      #   statusMatrix[4,step]<-0
+      # }
 
-      output.read<-FALSE
-      output.temp<-NULL
-      while(output.read==FALSE){
-        try({output.temp<-rd_output(dir.run, covar=F, ncol=numCols)})
-        if(is.null(output.temp)){
-          output.read<-FALSE
-          numCols<<-numCols+100
+      if(abs(statusMatrix[1,step]-statusMatrix[3,step])>0.01 && step<=(10+5*TargetVal))
+      {
+        statusMatrix[1,(step+1)]<-statusMatrix[1,step]
+        statusMatrix[2,(step+1)]<-statusMatrix[2,step]+(statusMatrix[1,step]-statusMatrix[3,step])*(1-statusMatrix[2,step])
+        step<-step+1
+        print("Status matrix = ")
+        print(statusMatrix)
+        forecast.run$SPRtarget<<-as.numeric(statusMatrix[2,step])
+        wrt_forecast(forecast.run,dir=dir.run,overwrite = TRUE)
+      }else{
+        if(TargetVal<3){
+          TargetVal<-TargetVal+1
+          statusMatrix[1,(step+1)]<-TargetVals[TargetVal]
+          statusMatrix[2,(step+1)]<-statusMatrix[2,step]+(TargetVals[TargetVal]-TargetVals[(TargetVal-1)])*(1-statusMatrix[2,step])
+          step<-step+1
+          print("Status matrix = ")
+          print(statusMatrix)
+          forecast.run$SPRtarget<<-as.numeric(statusMatrix[2,step])
+          wrt_forecast(forecast.run,dir=dir.run,overwrite = TRUE)
         }else{
-          output.read<-TRUE
-          output.run<<-output.temp
+          step<-step+1
+          findingTargets<-FALSE
         }
       }
-      incProgress(0.00, detail = paste0("Finding MSY - search loop ",2," of probably 10-15 (max 30). Reading catch results"))
-      #print("Output read successfully 2")
-      statusMatrix[3,4]<-mean(output.run$sprseries$SPR[output.run$sprseries$Year>=input$TargetYears[1] & output.run$sprseries$Year<=input$TargetYears[2]])
-      Catch<-ReadCatch(output.run,input$TargetYears[1]:input$TargetYears[2])
-      Catch<-Catch[Catch[,1]>=input$TargetYears[1] & Catch[,1]<=input$TargetYears[2],]
-      statusMatrix[4,4]<-sum(Catch[,5])/length(unique(Catch[,1]))
-
-      if(statusMatrix[4,3]>statusMatrix[4,4])
-      {
-        statusMatrix[1,5]<-statusMatrix[3,3]+(statusMatrix[3,3]-statusMatrix[3,4])
-        statusMatrix[2,5]<-statusMatrix[2,3]+(statusMatrix[2,3]-statusMatrix[2,4])
-      }else{
-        statusMatrix[1,5]<-statusMatrix[3,4]+(statusMatrix[3,4]-statusMatrix[3,3])
-        statusMatrix[2,5]<-statusMatrix[2,4]+(statusMatrix[2,4]-statusMatrix[2,3])
       }
 
-      forecast.run$SPRtarget<<-as.numeric(statusMatrix[2,5])
-      wrt_forecast(forecast.run,dir=dir.run,overwrite = TRUE)
-
-      #print(statusMatrix)
-
-      incProgress(0.05, detail = paste0("Finding MSY - search loop ",3," of probably ~10 (max 30)")) #0.4 total
-
-      shell(paste("cd /d ",dir.run," && ss3 -nohess",sep=""))#
-      #print("SS ran successfully 3 :)")
-      incProgress(0.00, detail = paste0("Finding MSY - search loop ",3," of probably ~10 (max 30). Reading output file")) #0.4 total
-
-      output.read<-FALSE
-      output.temp<-NULL
-      while(output.read==FALSE){
-        try({output.temp<-rd_output(dir.run, covar=F, ncol=numCols)})
-        if(is.null(output.temp)){
-          output.read<-FALSE
-          numCols<<-numCols+100
-        }else{
-          output.read<-TRUE
-          output.run<<-output.temp
-        }
-      }
-      incProgress(0.00, detail = paste0("Finding MSY - search loop ",3," of probably ~10 (max 30). Reading catch results"))
-      #print("Output read successfully 3")
-      statusMatrix[3,5]<-mean(output.run$sprseries$SPR[output.run$sprseries$Year>=input$TargetYears[1] & output.run$sprseries$Year<=input$TargetYears[2]])
-      Catch<-ReadCatch(output.run,input$TargetYears[1]:input$TargetYears[2])
-      Catch<-Catch[Catch[,1]>=input$TargetYears[1] & Catch[,1]<=input$TargetYears[2],]
-      statusMatrix[4,5]<-sum(Catch[,5])/length(unique(Catch[,1]))
-
-      keep.searching<-TRUE
-      Search.Iters<-0
+      findingMSY<-TRUE
       stepSize<-1
       newGuess1<-matrix(NA,nrow=0,ncol=5)
       newGuess2<-matrix(NA,nrow=0,ncol=5)
       lowMSY<-matrix(c(0,0,0,0),nrow=4,ncol=1)
       highMSY<-matrix(c(0,0,0,0),nrow=4,ncol=1)
-      while(keep.searching==TRUE)
+      while(findingMSY==TRUE)
       {
+        incProgress(0.00, detail = paste0("Finding MSY - search loop ",step," of probably 10-15 (max 30)- finding MSY. Calculating next search estimate")) #0.4 total
 
-        BestGuesses<-statusMatrix[,order(statusMatrix[4,],decreasing = TRUE)]
+        BestGuesses<-statusMatrix[,order(statusMatrix[4,],statusMatrix[3,],statusMatrix[2,],decreasing = TRUE)]
 
         bestMSY<-BestGuesses[,1,drop=FALSE]
 
-        lowMSY<-BestGuesses[,BestGuesses[3,]<bestMSY[3,],drop=FALSE]
+        lowMSY<-BestGuesses[,BestGuesses[2,]<bestMSY[2,1],drop=FALSE]
+        lowMSY<-lowMSY[,lowMSY[3,]<=bestMSY[3,1],drop=FALSE]
         lowMSY<-lowMSY[,!is.na(lowMSY[3,]),drop=FALSE]
         lowMSY<-lowMSY[,lowMSY[3,]==max(lowMSY[3,]),drop=FALSE]
         lowMSY<-lowMSY[,1,drop=FALSE]
 
-        highMSY<-BestGuesses[,BestGuesses[3,]>bestMSY[3,],drop=FALSE]
+        highMSY<-BestGuesses[,BestGuesses[2,]>bestMSY[2,],drop=FALSE]
+        highMSY<-highMSY[,highMSY[3,]>=bestMSY[3,],drop=FALSE]
         highMSY<-highMSY[,!is.na(highMSY[3,]),drop=FALSE]
         highMSY<-highMSY[,highMSY[3,]==min(highMSY[3,]),drop=FALSE]
         highMSY<-highMSY[,1,drop=FALSE]
@@ -1274,9 +1307,17 @@ RunTargetForecast<-function(input, output, session){
         newGuess1<-rbind(FitParabola(c(bestMSY[2,1],lowMSY[2,1],highMSY[2,1]),c(bestMSY[4,1],lowMSY[4,1],highMSY[4,1])),newGuess1)
         newGuess2<-rbind(FitParabola(c(bestMSY[3,1],lowMSY[3,1],highMSY[3,1]),c(bestMSY[4,1],lowMSY[4,1],highMSY[4,1])),newGuess2)
 
-        statusMatrix[1,(6+Search.Iters)]<-0.8*newGuess2[1,4]+0.1*lowMSY[3,1]+0.1*highMSY[3,1]
-        statusMatrix[2,(6+Search.Iters)]<-0.8*newGuess1[1,4]+0.1*lowMSY[2,1]+0.1*highMSY[2,1]
+        statusMatrix[1,step]<-0.8*newGuess2[1,4]+0.1*lowMSY[3,1]+0.1*highMSY[3,1]
+        statusMatrix[2,step]<-0.8*newGuess1[1,4]+0.1*lowMSY[2,1]+0.1*highMSY[2,1]
 
+        print(paste("best msy = ",bestMSY))
+        print(paste("low msy = ",lowMSY))
+        print(paste("high msy = ",highMSY))
+        print(paste("new guess 1 = ",newGuess1))
+        print(paste("new guess 2 = ",newGuess2))
+
+        print("Status matrix = ")
+        print(statusMatrix)
         #statusMatrix[1,(6+Search.Iters)]<-(bestMSY[3,1]*(bestMSY[4,1])+highMSY[3,1]*(highMSY[4,1]+stepSize*bestMSY[4,1])/(1+stepSize)+lowMSY[3,1]*(lowMSY[4,1]+stepSize*bestMSY[4,1])/(1+stepSize))/(bestMSY[4,1]+(highMSY[4,1]+stepSize*bestMSY[4,1])/(1+stepSize)+(lowMSY[4,1]+stepSize*bestMSY[4,1])/(1+stepSize))
         #statusMatrix[2,(6+Search.Iters)]<-(bestMSY[2,1]*(bestMSY[4,1])+highMSY[2,1]*(highMSY[4,1]+stepSize*bestMSY[4,1])/(1+stepSize)+lowMSY[2,1]*(lowMSY[4,1]+stepSize*bestMSY[4,1])/(1+stepSize))/(bestMSY[4,1]+(highMSY[4,1]+stepSize*bestMSY[4,1])/(1+stepSize)+(lowMSY[4,1]+stepSize*bestMSY[4,1])/(1+stepSize))
 
@@ -1289,16 +1330,16 @@ RunTargetForecast<-function(input, output, session){
         #statusMatrix[1,(4+Search.Iters)]<-BestGuesses[3,1]+stepSize*((BestGuesses[4,1]-BestGuesses[4,2])*(BestGuesses[3,1]-BestGuesses[3,2])+(BestGuesses[4,1]-BestGuesses[4,3])*(BestGuesses[3,1]-BestGuesses[3,3]))/((BestGuesses[4,1]-BestGuesses[4,2])+(BestGuesses[4,1]-BestGuesses[4,3]))
         #statusMatrix[2,(4+Search.Iters)]<-BestGuesses[2,1]+stepSize*((BestGuesses[4,1]-BestGuesses[4,2])*(BestGuesses[2,1]-BestGuesses[2,2])+(BestGuesses[4,1]-BestGuesses[4,3])*(BestGuesses[2,1]-BestGuesses[2,3]))/((BestGuesses[4,1]-BestGuesses[4,2])+(BestGuesses[4,1]-BestGuesses[4,3]))
 
-        forecast.run$SPRtarget<<-as.numeric(statusMatrix[2,(6+Search.Iters)])
+        forecast.run$SPRtarget<<-as.numeric(statusMatrix[2,step])
         wrt_forecast(forecast.run,dir=dir.run,overwrite = TRUE)
 
         #print(statusMatrix)
 
-        incProgress(0.05, detail = paste0("Finding MSY - search loop ",(4+Search.Iters)," of probably ~10 (max 30). Running SS3. Best estim so far MSY = ",bestMSY[4,1]," (",lowMSY[4,1],",",highMSY[4,1],") at SPR = ",bestMSY[3,1],"(",lowMSY[3,1],",",highMSY[3,1],")")) #0.4 total
+        incProgress(0.05, detail = paste0("Finding MSY - search loop ",step," of probably 10-15 (max 30)- finding MSY. Running SS3. Best estim so far MSY = ",bestMSY[4,1]," (",lowMSY[4,1],",",highMSY[4,1],") at SPR = ",bestMSY[3,1],"(",lowMSY[3,1],",",highMSY[3,1],")")) #0.4 total
 
         shell(paste("cd /d ",dir.run," && ss3 -nohess",sep=""))#
         #print(paste0("SS ran successfully :) ",Search.Iters))
-        incProgress(0.00, detail = paste0("Finding MSY - search loop ",(4 +Search.Iters)," of probably ~10 (max 30). Reading output file. Best estim so far MSY = ",bestMSY[4,1]," (",lowMSY[4,1],",",highMSY[4,1],") at SPR = ",bestMSY[3,1],"(",lowMSY[3,1],",",highMSY[3,1],")")) #0.4 total
+        incProgress(0.00, detail = paste0("Finding MSY - search loop ",step," of probably 10-15 (max 30)- finding MSY. Reading output file. Best estim so far MSY = ",bestMSY[4,1]," (",lowMSY[4,1],",",highMSY[4,1],") at SPR = ",bestMSY[3,1],"(",lowMSY[3,1],",",highMSY[3,1],")")) #0.4 total
 
         output.read<-FALSE
         output.temp<-NULL
@@ -1312,23 +1353,61 @@ RunTargetForecast<-function(input, output, session){
             output.run<<-output.temp
           }
         }
-        incProgress(0.00, detail = paste0("Finding MSY - search loop ",(4 +Search.Iters)," of probably ~10 (max 30). Reading catch data. Best estim so far MSY = ",bestMSY[4,1]," (",lowMSY[4,1],",",highMSY[4,1],") at SPR = ",bestMSY[3,1],"(",lowMSY[3,1],",",highMSY[3,1],")")) #0.4 total
+        incProgress(0.00, detail = paste0("Finding MSY - search loop ",step," of probably 10-15 (max 30)- finding MSY. Reading catch data. Best estim so far MSY = ",bestMSY[4,1]," (",lowMSY[4,1],",",highMSY[4,1],") at SPR = ",bestMSY[3,1],"(",lowMSY[3,1],",",highMSY[3,1],")")) #0.4 total
 
         #print(paste0("Output read successfully ",Search.Iters))
-        statusMatrix[3,(6+Search.Iters)]<-sum(output.run$sprseries$SPR[output.run$sprseries$Year>=input$TargetYears[1] & output.run$sprseries$Year<=input$TargetYears[2]])/length(output.run$sprseries$SPR[output.run$sprseries$Year>=input$TargetYears[1] & output.run$sprseries$Year<=input$TargetYears[2]])
+        statusMatrix[3,step]<-sum(output.run$sprseries$SPR[output.run$sprseries$Year>=input$TargetYears[1] & output.run$sprseries$Year<=input$TargetYears[2]])/length(output.run$sprseries$SPR[output.run$sprseries$Year>=input$TargetYears[1] & output.run$sprseries$Year<=input$TargetYears[2]])
         Catch<-ReadCatch(output.run,input$TargetYears[1]:input$TargetYears[2])
         Catch<-Catch[Catch[,1]>=input$TargetYears[1] & Catch[,1]<=input$TargetYears[2],]
-        statusMatrix[4,(6+Search.Iters)]<-sum(Catch[,5])/length(unique(Catch[,1]))
+        statusMatrix[4,step]<-sum(Catch[,5])/length(unique(Catch[,1]))
 
-        if(statusMatrix[4,(6+Search.Iters)]>BestGuesses[4,1]){
+        CatchAll<-ReadCatch(output.run,(input$ManagementYearInput+1):(input$TargetYears[1]-1))
+        CatchAllAnnual<-aggregate(CatchAll[,5:6],list(CatchAll[,1]),sum,na.rm=TRUE)
+        statusMatrix[5,step]<-CatchAllAnnual[1,2]
+        if(length(min(CatchAllAnnual[,2],na.rm=TRUE))==0){
+          statusMatrix[6,step]<-0
+          statusMatrix[4,step]<-0
+        }else if(min(CatchAllAnnual[,2],na.rm=TRUE)==Inf){
+          statusMatrix[6,step]<-0
+          statusMatrix[4,step]<-0
+        }else if(min(CatchAllAnnual[,2],na.rm=TRUE)<=0){
+          statusMatrix[3,step]<-0
+          statusMatrix[6,step]<-0
+          statusMatrix[4,step]<-0
+        }else{
+          statusMatrix[6,step]<-min(CatchAllAnnual[,2])
+        }
+
+        if(length(max(CatchAllAnnual[,2],na.rm=TRUE))==0){
+          statusMatrix[7,step]<-0
+          statusMatrix[4,step]<-0
+        }else if(max(CatchAllAnnual[,2],na.rm=TRUE)==Inf){
+          statusMatrix[7,step]<-0
+          statusMatrix[4,step]<-0
+        }else if(max(CatchAllAnnual[,2],na.rm=TRUE)<=0){
+          statusMatrix[7,step]<-0
+          statusMatrix[4,step]<-0
+        }else{
+          statusMatrix[7,step]<-max(CatchAllAnnual[,2])
+        }
+
+        # if(statusMatrix[6,step]<0.9*min(c(statusMatrix[4,step],statusMatrix[5,step]),na.rm=TRUE)){
+        #   statusMatrix[4,step]<-0
+        # }
+        # if(statusMatrix[7,step]>1.1*max(c(statusMatrix[4,step],statusMatrix[5,step]),na.rm=TRUE)){
+        #   statusMatrix[4,step]<-0
+        # }
+
+        if(statusMatrix[4,step]>BestGuesses[4,1]){
 
         }else{
           stepSize<-0.5*stepSize
         }
-        Search.Iters<-Search.Iters+1
-
-        if(((highMSY[3,1]-lowMSY[3,1])<0.001)||(stepSize<0.001)||(Search.Iters>30)){
-          keep.searching<-FALSE
+        step<-step+1
+        print("Status matrix = ")
+        print(statusMatrix)
+        if(((highMSY[3,1]-lowMSY[3,1])<0.001)||(stepSize<0.001)||(step>30)){
+          findingMSY<-FALSE
           outputName1<-"MSYSearch"
           outputName2<-"ParabolaGuesses1"
           outputName3<-"ParabolaGuesses2"
@@ -1500,8 +1579,10 @@ RunTargetForecast<-function(input, output, session){
 #' @author Nathan Vaughan
 #' @keywords assessment projection
 RunAppliedForecast<-function(input, output, session, kobeComp=1){
-
+print("start applied forecast")
   incProgress(0.1, detail = paste0("Moving on to applied fishing forecast"))
+  print(paste("forecast applied = ",input$ForecastApplied))
+  print(paste("forecast applied = ",input$Rebuild))
   if(input$ForecastApplied==1){
     starter.run<<-starter.msy
     data.run<<-data.msy
@@ -1527,8 +1608,9 @@ RunAppliedForecast<-function(input, output, session, kobeComp=1){
       #incProgress(0.1, detail = "Run directory present")
     }
   }else{
-  if(input$Rebuild==2){ #No rebuilding plan
+  #if(input$Rebuild!=1){ #No rebuilding plan
     if(input$ForecastApplied==2){ #Fish at fixed fraction of Fmsy
+      print("start applied forecast: Fixed F fraction")
       incProgress(0.1, detail = paste0("Fishing at ",input$ABCfrac,"*Fmsy with no rebuilding plan")) #0.4 total
       projCatch<-msyCatch[msyCatch$Year>=input$TargetYears[1] & msyCatch$Year<=input$TargetYears[2],c(1,2,3,4,10)]
       #projCatch<-msyCatch[msyCatch$Year>=2065 & msyCatch$Year<=2076,c(1,2,3,4,10)]
@@ -1536,6 +1618,7 @@ RunAppliedForecast<-function(input, output, session, kobeComp=1){
       projCatch<-projCatch[,c(1,2,7)]
       projCatch[,3]<-input$ABCfrac*projCatch[,3]/(input$TargetYears[2]-input$TargetYears[1]+1)
       forecast.run$FirstYear_for_caps_and_allocations<<-data.run$endyr+forecast.run$Nforecastyrs+1
+      print("start applied forecast: Aggregated projected catch")
       for(i in input$ManagementYearInput:(data.msy$endyr+forecast.msy$Nforecastyrs))
       {
         for(j in 1:data.msy$nseas)
@@ -1547,10 +1630,13 @@ RunAppliedForecast<-function(input, output, session, kobeComp=1){
         }
       }
       managementLimits$fullCatch<-managementLimits$fullCatch[!is.na(managementLimits$fullCatch[,4]),,drop=FALSE]
+      print("start applied forecast: Updated management limits")
       forecast.run$Ncatch<<-length(managementLimits$fullCatch[,1])
       forecast.run$ForeCatch<<-as.data.frame(managementLimits$fullCatch)
       wrt_forecast(forecast.run,dir=dir.run,overwrite = TRUE)
+      print("start applied forecast: Wrote forecast file")
       shell(paste("cd /d ",dir.run," && ss3 -nohess",sep=""))
+      print("start applied forecast: Ran SS loop")
     }else if(input$ForecastApplied==3){#Fish at fixed Catch
       projCatch<-msyCatch[msyCatch$Year>=input$TargetYears[1] & msyCatch$Year<=input$TargetYears[2],c(1,2,3,4,5)]
       #projCatch<-msyCatch[msyCatch$Year>=2065 & msyCatch$Year<=2076,c(1,2,3,4,10)]
@@ -1631,13 +1717,13 @@ RunAppliedForecast<-function(input, output, session, kobeComp=1){
       }
       return(NULL)
     }
-  }else{ #Rebuilding plan
-    if(input$ForecastApplied==2){ #Fish at fixed fraction of Fmsy after fishing at the fraction of Fmsy required to meet rebuilding target
-
-    }else if(input$ForecastApplied==3){ #Fish at fixed Catch after fishing at the fixed catch required to meet rebuilding target
-
-    }
-  }
+  # }else{ #Rebuilding plan
+  #   if(input$ForecastApplied==2){ #Fish at fixed fraction of Fmsy after fishing at the fraction of Fmsy required to meet rebuilding target
+  #
+  #   }else if(input$ForecastApplied==3){ #Fish at fixed Catch after fishing at the fixed catch required to meet rebuilding target
+  #
+  #   }
+  # }
   }
   output.read<-FALSE
   output.temp<-NULL

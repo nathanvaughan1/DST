@@ -92,22 +92,17 @@ resetTabElements<-function(input,output,session){
         }else{
           if(fleetData[1,5]==2)
           {
-            if(data.orig$units_of_catch[i]==1)
-            {
-              fleetData[,4]<-fleetData[,4]*weightScale[disp.Desc$Units[1]]#2.20462
-              CatchCol<-5:6
-            }else if (data.orig$units_of_catch[i]==2){
-              CatchCol<-7:8
-            }
+            fleetData[,4]<-fleetData[,4]*weightScale[disp.Desc$Units[1]]#2.20462
+            CatchCol<-5:6
+          }else if (fleetData[1,5]==5){
+            CatchCol<-7:8
+
           }else if(fleetData[1,5]==3)
           {
-            if(data.orig$units_of_catch[i]==1)
-            {
-              fleetData[,4]<-fleetData[,4]*weightScale[disp.Desc$Units[1]]#2.20462
-              CatchCol<-5
-            }else if (data.orig$units_of_catch[i]==2){
-              CatchCol<-7
-            }
+            fleetData[,4]<-fleetData[,4]*weightScale[disp.Desc$Units[1]]#2.20462
+            CatchCol<-5
+          }else if (fleetData[1,5]==6){
+            CatchCol<-7
           }else if(fleetData[1,5]==99)
           {
             CatchCol<-9
@@ -717,16 +712,22 @@ buildObservers<-function(input, output, session, observers=0){
             ){
               AllocGroup<-which(groups==forecast.orig$fleet_assignment_to_allocation_group[i])
               fleetData<-forecast.orig$ForeCatch[forecast.orig$ForeCatch[,3]==i,,drop=FALSE]
-              if(length(fleetData[,1])==0){if(data.orig$units_of_catch[i]==1){CatchUnits[i]<-2}else if (data.orig$units_of_catch[i]==2){CatchUnits[i]<-3}
+              if(length(fleetData[,1])==0){
+                if(data.orig$units_of_catch[i]==1)
+                  {CatchUnits[i]<-3}else if (data.orig$units_of_catch[i]==2){CatchUnits[i]<-6}
               }else{
-                if(fleetData[1,5]==2){if(data.orig$units_of_catch[i]==1){CatchUnits[i]<-5}else if (data.orig$units_of_catch[i]==2){CatchUnits[i]<-6}
-                }else if(fleetData[1,5]==3){if(data.orig$units_of_catch[i]==1){CatchUnits[i]<-2}else if (data.orig$units_of_catch[i]==2){CatchUnits[i]<-3}
-                }else if(fleetData[1,5]==99){CatchUnits[i]<-99}
+                CatchUnits[i]<-fleetData[1,5]
+                # if(fleetData[1,5]==2){
+                #   if(data.orig$units_of_catch[i]==1){
+                #     CatchUnits[i]<-5
+                #   }else if (data.orig$units_of_catch[i]==2){CatchUnits[i]<-6}
+                # }else if(fleetData[1,5]==3){if(data.orig$units_of_catch[i]==1){CatchUnits[i]<-2}else if (data.orig$units_of_catch[i]==2){CatchUnits[i]<-3}
+                # }else if(fleetData[1,5]==99){CatchUnits[i]<-99}
               }
-              if(CatchUnits[i]==2){tempData<-rel_RB_orig}
-              if(CatchUnits[i]==3){tempData<-rel_RN_orig}
-              if(CatchUnits[i]==5){tempData<-rel_DB_orig}
-              if(CatchUnits[i]==6){tempData<-rel_DN_orig}
+              if(CatchUnits[i]==2){tempData<-rel_DB_orig}
+              if(CatchUnits[i]==3){tempData<-rel_RB_orig}
+              if(CatchUnits[i]==5){tempData<-rel_DN_orig}
+              if(CatchUnits[i]==6){tempData<-rel_RN_orig}
               if(CatchUnits[i]==99){tempData<-rel_F_orig}
               withProgress(message="Update Catch history values and inputs",value=0.5,{
                 if(input$displaySeason==1){

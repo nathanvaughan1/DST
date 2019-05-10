@@ -495,27 +495,19 @@ buildTabElements<-function(input, output, session){
         }
       }else{
         if(fleetData[1,5]==2){
-          if(data.orig$units_of_catch[i]==1){
-            fleetData[,4]<-fleetData[,4]*weightScale[disp.Desc$Units[1]]#2.20462
-            newtext(paste0("fleet",i,"catchHistTitle2"),paste0("fleet",i,"catchHistHeader"),paste0("Total Dead Weight (",weightNames[disp.Desc$Units[1]],") \n"))
-            CatchCol<-5:6
-          }else if (data.orig$units_of_catch[i]==2){
+          fleetData[,4]<-fleetData[,4]*weightScale[disp.Desc$Units[1]]#2.20462
+          newtext(paste0("fleet",i,"catchHistTitle2"),paste0("fleet",i,"catchHistHeader"),paste0("Total Dead Weight (",weightNames[disp.Desc$Units[1]],") \n"))
+          CatchCol<-5:6
+        }else if (fleetData[1,5]==5){
             newtext(paste0("fleet",i,"catchHistTitle2"),paste0("fleet",i,"catchHistHeader"),paste0("Total Dead Numbers (1000's) \n"))
             CatchCol<-7:8
-          }else{
-            print("ERROR:This fleet doesn't seem to have catch units specified")
-          }
         }else if(fleetData[1,5]==3){
-          if(data.orig$units_of_catch[i]==1){
             fleetData[,4]<-fleetData[,4]*weightScale[disp.Desc$Units[1]]#2.20462
             newtext(paste0("fleet",i,"catchHistTitle2"),paste0("fleet",i,"catchHistHeader"),paste0("Retained Catch in Weight (",weightNames[disp.Desc$Units[1]],") \n"))
             CatchCol<-5
-          }else if (data.orig$units_of_catch[i]==2){
+        }else if (fleetData[1,5]==6){
             newtext(paste0("fleet",i,"catchHistTitle2"),paste0("fleet",i,"catchHistHeader"),paste0("Retained Catch in Numbers (1000's) \n"))
             CatchCol<-7
-          }else{
-            print("ERROR:This fleet doesn't seem to have catch units specified")
-          }
         }else if(fleetData[1,5]==99){
           newtext(paste0("fleet",i,"catchHistTitle2"),paste0("fleet",i,"catchHistHeader"),paste0("Harvest Rate (F) \n"))
           CatchCol<-9
