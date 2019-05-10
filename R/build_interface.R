@@ -667,7 +667,11 @@ buildTabElements<-function(input, output, session){
           }
         }
       }
-      if(Slope.Val.Temp>=0){
+      if(Slope.Val.Temp==0)
+      {
+        Slope.Val.Temp<-0.001
+      }
+      if(Slope.Val.Temp>0){
         vals.temp<-unique(c(sort(c(Slope.Val.Temp,0.01,0.02,0.05,0.1,0.2,0.5,1,2,5,10,20,50,100,200,500,1000,2000)),Inf,-2000,-1000,-500,-200,-100,-50,-20,-10,-5,-2,-1,-0.5,-0.2,-0.1,-0.05,-0.02,-0.01))
       }else{
         vals.temp<-unique(c(0.01,0.02,0.05,0.1,0.2,0.5,1,2,5,10,20,50,100,200,500,1000,2000,Inf,sort(c(Slope.Val.Temp,-2000,-1000,-500,-200,-100,-50,-20,-10,-5,-2,-1,-0.5,-0.2,-0.1,-0.05,-0.02,-0.01))))
@@ -675,7 +679,7 @@ buildTabElements<-function(input, output, session){
       #newTextSlider(paste0("fleet",i,"sizeLimSlope"),paste0("fleet",i,"Lcslope"),label = "Lc slope", choices=paste(vals.temp),selected = paste(Slope.Val.Temp))
       #newTextSlider(paste0("fleet",i,"sizeLimSlope"),paste0("fleet",i,"Lcslope"),label = "Lc slope", choices=c(0,10,200,Inf,-200,-10,-0.01),selected = 0)
       #showElement(paste0("fleet",i,"Lcslope"))
-      newSlider(paste0("fleet",i,"sizeLimSlope"),paste0("fleet",i,"Lcslope"),titleText = "Lc slope",min=0,max=1000,value=Slope.Val.Temp,step=0.1)
+      newSlider(paste0("fleet",i,"sizeLimSlope"),paste0("fleet",i,"Lcslope"),titleText = "Lc slope",min=0.001,max=1000,value=Slope.Val.Temp,step=0.1)
 
       lcMaxRet.temp<-grep(paste0("Size Retention  ",3,"  fleet/Survey  ",i),row.names(control.orig$Select_Params))[1]
       if(control.orig$Select_Params[lcMaxRet.temp,13]==0){

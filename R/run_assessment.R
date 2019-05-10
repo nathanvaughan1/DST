@@ -765,25 +765,34 @@ duplicateFleets<-function(input, output, session){
   newVals[Edit.Row.Slope]<-ifelse(!is.na(sizeLimits[,4]),sizeLimits[,4],newVals[Edit.Row.Slope])
   newVals[Edit.Row.Discard]<-ifelse(!is.na(sizeLimits[,2]),sizeLimits[,2],newVals[Edit.Row.Discard])
   newVals[Edit.Row.Retain]<-ifelse(!is.na(sizeLimits[,3]),sizeLimits[,3],newVals[Edit.Row.Retain])
-  if(length(pars.run$Labels)>max(rowsSelectTV))
+  if(!is.null(rowsSelectTV))
   {
-    pars.run$Labels<<-c(pars.run$Labels[1:(min(rowsSelect)-1)],oldLabels[rowFleetLength],newLabels[rowFleetLength],oldLabels[rowSurveyLength],oldLabels[rowFleetAge],newLabels[rowFleetAge],oldLabels[rowSurveyAge],
-                       pars.run$Labels[(max(rowsSelectTV)+1):length(pars.run$Labels)])
-    pars.run$Values<<-c(pars.run$Values[1:(min(rowsSelect)-2)],oldVals[rowFleetLength],newVals[rowFleetLength],oldVals[rowSurveyLength],oldVals[rowFleetAge],newVals[rowFleetAge],oldVals[rowSurveyAge],
-                       pars.run$Values[(max(rowsSelectTV)):length(pars.run$Values)])
-  }else{
-    if(numPar.TV.Env>0){
+    if(length(pars.run$Labels)>max(rowsSelectTV))
+    {
       pars.run$Labels<<-c(pars.run$Labels[1:(min(rowsSelect)-1)],oldLabels[rowFleetLength],newLabels[rowFleetLength],oldLabels[rowSurveyLength],oldLabels[rowFleetAge],newLabels[rowFleetAge],oldLabels[rowSurveyAge],
-                         oldLabelsTV[1:numPar.TV.Env],newLabelsTV[TVValsAddENV],oldLabelsTV[-c(1:numPar.TV.Env)])
+                          pars.run$Labels[(max(rowsSelectTV)+1):length(pars.run$Labels)])
       pars.run$Values<<-c(pars.run$Values[1:(min(rowsSelect)-2)],oldVals[rowFleetLength],newVals[rowFleetLength],oldVals[rowSurveyLength],oldVals[rowFleetAge],newVals[rowFleetAge],oldVals[rowSurveyAge],
-                         oldValsTV[1:numPar.TV.Env],newValsTV[TVValsAddENV],oldValsTV[-c(1:numPar.TV.Env)])
+                          pars.run$Values[(max(rowsSelectTV)):length(pars.run$Values)])
     }else{
-      pars.run$Labels<<-c(pars.run$Labels[1:(min(rowsSelect)-1)],oldLabels[rowFleetLength],newLabels[rowFleetLength],oldLabels[rowSurveyLength],oldLabels[rowFleetAge],newLabels[rowFleetAge],oldLabels[rowSurveyAge],
-                         oldLabelsTV)
-      pars.run$Values<<-c(pars.run$Values[1:(min(rowsSelect)-2)],oldVals[rowFleetLength],newVals[rowFleetLength],oldVals[rowSurveyLength],oldVals[rowFleetAge],newVals[rowFleetAge],oldVals[rowSurveyAge],
-                         oldValsTV)
+      if(numPar.TV.Env>0){
+        pars.run$Labels<<-c(pars.run$Labels[1:(min(rowsSelect)-1)],oldLabels[rowFleetLength],newLabels[rowFleetLength],oldLabels[rowSurveyLength],oldLabels[rowFleetAge],newLabels[rowFleetAge],oldLabels[rowSurveyAge],
+                            oldLabelsTV[1:numPar.TV.Env],newLabelsTV[TVValsAddENV],oldLabelsTV[-c(1:numPar.TV.Env)])
+        pars.run$Values<<-c(pars.run$Values[1:(min(rowsSelect)-2)],oldVals[rowFleetLength],newVals[rowFleetLength],oldVals[rowSurveyLength],oldVals[rowFleetAge],newVals[rowFleetAge],oldVals[rowSurveyAge],
+                            oldValsTV[1:numPar.TV.Env],newValsTV[TVValsAddENV],oldValsTV[-c(1:numPar.TV.Env)])
+      }else{
+        pars.run$Labels<<-c(pars.run$Labels[1:(min(rowsSelect)-1)],oldLabels[rowFleetLength],newLabels[rowFleetLength],oldLabels[rowSurveyLength],oldLabels[rowFleetAge],newLabels[rowFleetAge],oldLabels[rowSurveyAge],
+                            oldLabelsTV)
+        pars.run$Values<<-c(pars.run$Values[1:(min(rowsSelect)-2)],oldVals[rowFleetLength],newVals[rowFleetLength],oldVals[rowSurveyLength],oldVals[rowFleetAge],newVals[rowFleetAge],oldVals[rowSurveyAge],
+                            oldValsTV)
+      }
     }
+  }else{
+    pars.run$Labels<<-c(pars.run$Labels[1:(min(rowsSelect)-1)],oldLabels[rowFleetLength],newLabels[rowFleetLength],oldLabels[rowSurveyLength],oldLabels[rowFleetAge],newLabels[rowFleetAge],oldLabels[rowSurveyAge],
+                        oldLabelsTV)
+    pars.run$Values<<-c(pars.run$Values[1:(min(rowsSelect)-2)],oldVals[rowFleetLength],newVals[rowFleetLength],oldVals[rowSurveyLength],oldVals[rowFleetAge],newVals[rowFleetAge],oldVals[rowSurveyAge],
+                        oldValsTV)
   }
+
 
   if(length(c(control.run$Q)[c(control.run$Q)>0])>0)
   {
@@ -1252,10 +1261,14 @@ RunTargetForecast<-function(input, output, session){
       #   statusMatrix[4,step]<-0
       # }
 
-      if(abs(statusMatrix[1,step]-statusMatrix[3,step])>0.01 && step<=(10+5*TargetVal))
+      if(abs(statusMatrix[1,step]-statusMatrix[3,step])>0.2 && step<=(10+5*TargetVal))
       {
         statusMatrix[1,(step+1)]<-statusMatrix[1,step]
-        statusMatrix[2,(step+1)]<-statusMatrix[2,step]+(statusMatrix[1,step]-statusMatrix[3,step])*(1-statusMatrix[2,step])
+        if(statusMatrix[1,step]>statusMatrix[3,step]){
+          statusMatrix[2,(step+1)]<-statusMatrix[2,step]+min((statusMatrix[1,step]-statusMatrix[3,step]),(0.75*(1-statusMatrix[2,step])*(statusMatrix[1,step]-statusMatrix[3,step])/statusMatrix[2,step]))
+        }else{
+          statusMatrix[2,(step+1)]<-statusMatrix[2,step]+max((statusMatrix[1,step]-statusMatrix[3,step]),-0.75*(statusMatrix[2,step]))
+        }
         step<-step+1
         print("Status matrix = ")
         print(statusMatrix)
