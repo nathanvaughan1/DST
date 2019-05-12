@@ -310,7 +310,7 @@ buildForecastChoices<-function(input, output, session){
   #input$ManagementYearInput<<-(as.integer(format(Sys.Date(), "%Y"))+1)
   targetNames<<-c("SPR","Spawning Biomass Ratio","Maximize Catch","Use previous estimate")
   targetNames2<<-c("SPR Target Value","Ignore ","Spawning Biomass Ratio")
-  targetNames3<<-c("Implement Optimal","Fixed Fraction Fmsy","Constant Catch","Kobe Matrix")
+  targetNames3<<-c("Implement Optimal","Fixed Fraction Fmsy","Constant Catch")#,"Kobe Matrix")
   #targetNames3<<-c("Implement Optimal","Fixed Fraction Fmsy","Constant Catch","Kobe Matrix")
   targetValue<<-c(forecast.orig$SPRtarget,1,forecast.orig$Btarget)
 
@@ -324,7 +324,9 @@ buildForecastChoices<-function(input, output, session){
 
   newSlider("ManagementYearCol5","TargetYears",titleText="Optimal target year range",min=data.orig$endyr,max=(data.orig$endyr+forecast.orig$Nforecastyrs),value=disp.Desc$TargetYears,step=1,sep="")
 
-  newRadio("ManagementYearCol6","ForecastApplied",label="Implemented Fishing",selected=1,choiceNames=targetNames3,choiceValues=c(1,2,3,4),inline=FALSE)
+  #newRadio("ManagementYearCol6","ForecastApplied",label="Implemented Fishing",selected=1,choiceNames=targetNames3,choiceValues=c(1,2,3,4),inline=FALSE)
+
+  newRadio("ManagementYearCol6","ForecastApplied",label="Implemented Fishing",selected=1,choiceNames=targetNames3,choiceValues=c(1,2,3),inline=FALSE)
 
   newRadio("ManagementYearCol6","Rebuild",label="With rebuilding target",selected=disp.Desc$ImplRebuild,choiceNames=c("yes","no"),choiceValues=c(1,2),inline=TRUE,hidden=TRUE)
 
