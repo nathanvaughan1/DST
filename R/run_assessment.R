@@ -327,6 +327,12 @@ duplicateFleets<-function(input, output, session){
   managementLimits<<-getMangementLimits(input, output, session)
   sizeLimits<-managementLimits$sizeLimits
 
+  sizeFleet<-NULL
+  sizeSurvey<-NULL
+  ageFleet<-NULL
+  ageSurvey<-NULL
+  selectParmsValCurr<-0
+
   incProgress(0.1, detail = "Building dummy selection fleets") #0.3 total
   pattern<-matrix(nrow=34,ncol=2)
   pattern[,1]<-c(2,8,6,0,2,2,8,8,6,0,2,2,8,(data.orig$Nages+1),0,2,(data.orig$Nages+1),8,6,6,0,4,6,6,3,3,3,0,0,0,0,0,0,0)
@@ -858,7 +864,10 @@ duplicateFleets<-function(input, output, session){
   control.run$Lambda_Changes[,2]<<-ifelse(control.run$Lambda_Changes[,2]>data.orig$Nfleet,control.run$Lambda_Changes[,2]+data.orig$Nfleet,control.run$Lambda_Changes[,2])
 
   newParams<-control.run$Select_Params
+  oldParams<-control.run$Select_Params
   newParams[,3]<-unlist(newVals)
+  newParams[,2]<-rep(9999,length(newParams[,2]))
+  oldParams[,2]<-rep(8888,length(oldParams[,2]))
   newParams[Edit.Row.Lc,3]<-ifelse(!is.na(sizeLimits[,1]),sizeLimits[,1],newParams[Edit.Row.Lc,3])
   newParams[Edit.Row.Slope,3]<-ifelse(!is.na(sizeLimits[,4]),sizeLimits[,4],newParams[Edit.Row.Slope,3])
   newParams[Edit.Row.Discard,3]<-ifelse(!is.na(sizeLimits[,2]),sizeLimits[,2],newParams[Edit.Row.Discard,3])
@@ -869,11 +878,23 @@ duplicateFleets<-function(input, output, session){
   newParams[,13]<-rep(0,length(newParams[,13]))
   newParams[,14]<-rep(0,length(newParams[,14]))
   newParams<-newParams[rowsCopyCtrl,]
+
   allRows<-1:row
   sizeRows<-grep("Size",row.names(control.run$Select_Params))
 
+  # rowFleetLength<-NULL
+  # rowFleetAge<-NULL
+  # rowSurveyLength<-NULL
+  # rowSurveyAge<-NULL
+
   if(data.orig$Nsurveys>0){
-    sizeFleetRows<-sizeRows[-grep(paste("fleet/Survey  ",(data.orig$Nfleet+1):(data.orig$Nfleet+data.orig$Nsurveys),sep="",collapse="|"),row.names(control.run$Select_Params[sizeRows,]))]
+    sizeFleetRows<-sizeRows
+    for(sFR in 1:data.orig$Nsurveys)
+    {
+      sizeFleetRows<-sizeFleetRows[-grep(paste("fleet/Survey    2",(data.orig$Nfleet+sFR),sep=""),row.names(control.run$Select_Params[sizeFleetRows,]))]
+    }
+    #sizeFleetRows<-
+    #sizeFleetRows<-sizeRows[-grep(paste("fleet/Survey  ",(data.orig$Nfleet+1):(data.orig$Nfleet+data.orig$Nsurveys),sep="",collapse="|"),row.names(control.run$Select_Params[sizeRows,]))]
   }else{
     sizeFleetRows<-sizeRows
   }
@@ -888,12 +909,24 @@ duplicateFleets<-function(input, output, session){
   }
   ageSurveyRows<-setdiff(ageRows,ageFleetRows)
 
-  control.run$Select_Params<<-rbind(control.run$Select_Params[sizeFleetRows,],
-                                    newParams[sizeNew,],
-                                    control.run$Select_Params[sizeSurveyRows,],
-                                    control.run$Select_Params[ageFleetRows,],
-                                    newParams[-sizeNew,],
-                                    control.run$Select_Params[ageSurveyRows,])
+  tempSizeSelectParams<-rbind(control.run$Select_Params[rowFleetLength,],
+                              newParams[rowFleetLength[rowsCopyCtrl],],
+                              control.run$Select_Params[rowSurveyLength,],
+                              control.run$Select_Params[rowFleetAge,],
+                              newParams[rowFleetAge[rowsCopyCtrl],],
+                              control.run$Select_Params[rowSurveyAge,])
+
+  #oldParams[sizeFleetRows,2]<-rep(7777,length(sizeFleetRows))
+  # oldParams[sizeSurveyRows,2]<-rep(6666,length(sizeSurveyRows))
+  # tempSizeSelectParams<-rbind(oldParams[sizeFleetRows,],
+  #                             newParams[sizeNew,],
+  #                             oldParams[sizeSurveyRows,],
+  #                             oldParams[ageFleetRows,],
+  #                             newParams[-sizeNew,],
+  #                             oldParams[ageSurveyRows,])
+
+  control.run$Select_Params<-tempSizeSelectParams
+  control.run$Select_Params<<-tempSizeSelectParams
 
   if(control.run$Var_adj==1)
   {
