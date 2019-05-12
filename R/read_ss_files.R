@@ -1563,21 +1563,24 @@ rd_ctl <- function(file, data_input){
     }
   }
 
-  if(data_input$ageerror$age0[2]<0)
+  if(!is.null(data_input$ageerror))
   {
-    for(i in 1:7)
+    if(data_input$ageerror$age0[2]<0)
     {
-      if(length(ctlVals[[readLine]])==14)
+      for(i in 1:7)
       {
-        MG_Params<-rbind(MG_Params,ctlVals[[readLine]])
-        rownames(MG_Params)[length(MG_Params[,1])]<-paste("AgeErr",i)
-        outText<-paste(ctlVals[[readLine]],collapse = " ")
-        print(paste("Ageign error",i," = ",outText,sep=""))
-        readLine<-readLine+1
-      }else
-      {
-        print("Error: There should be 14 values in a parameter line, I think this should have been an ageing error parameter???")
-        return(NULL)
+        if(length(ctlVals[[readLine]])==14)
+        {
+          MG_Params<-rbind(MG_Params,ctlVals[[readLine]])
+          rownames(MG_Params)[length(MG_Params[,1])]<-paste("AgeErr",i)
+          outText<-paste(ctlVals[[readLine]],collapse = " ")
+          print(paste("Ageign error",i," = ",outText,sep=""))
+          readLine<-readLine+1
+        }else
+        {
+          print("Error: There should be 14 values in a parameter line, I think this should have been an ageing error parameter???")
+          return(NULL)
+        }
       }
     }
   }
@@ -2782,31 +2785,57 @@ rd_forecast <- function(file='forecast.ss', Nfleets, Nareas, Nseas, verbose=FALS
 
   # go through numerical values and save as elements of a big list
   i <- 1
+  print(allnums[i])
   mylist$benchmarks <- allnums[i]; i <- i+1
+  print(allnums[i])
   mylist$MSY <- allnums[i]; i <- i+1
+  print(allnums[i])
   mylist$SPRtarget <- allnums[i]; i <- i+1
+  print(allnums[i])
   mylist$Btarget <- allnums[i]; i <- i+1
+  print(allnums[i])
   mylist$Bmark_years <- allnums[i:(i+5)]; i <- i+6
+  print(allnums[i])
   mylist$Bmark_relF_Basis <- allnums[i]; i <- i+1
+  print(allnums[i])
   mylist$Forecast <- allnums[i]; i <- i+1
+  print(allnums[i])
   mylist$Nforecastyrs <- allnums[i]; i <- i+1
+  print(allnums[i])
   mylist$F_scalar <- allnums[i]; i <- i+1
+  print(allnums[i])
   mylist$Fcast_years <- allnums[i:(i+3)]; i <- i+4
+  print(allnums[i])
   mylist$ControlRuleMethod <- allnums[i]; i <- i+1
+  print(allnums[i])
   mylist$BforconstantF <- allnums[i]; i <- i+1
+  print(allnums[i])
   mylist$BfornoF <- allnums[i]; i <- i+1
+  print(allnums[i])
   mylist$Flimitfraction <- allnums[i]; i <- i+1
+  print(allnums[i])
   mylist$N_forecast_loops <- allnums[i]; i <- i+1
+  print(allnums[i])
   mylist$First_forecast_loop_with_stochastic_recruitment <- allnums[i]; i <- i+1
+  print(allnums[i])
   mylist$Forecast_loop_control_3 <- allnums[i]; i <- i+1
+  print(allnums[i])
   mylist$Forecast_loop_control_4 <- allnums[i]; i <- i+1
+  print(allnums[i])
   mylist$Forecast_loop_control_5 <- allnums[i]; i <- i+1
+  print(allnums[i])
   mylist$FirstYear_for_caps_and_allocations <- allnums[i]; i <- i+1
+  print(allnums[i])
   mylist$stddev_of_log_catch_ratio <- allnums[i]; i <- i+1
+  print(allnums[i])
   mylist$Do_West_Coast_gfish_rebuilder_output <- allnums[i]; i <- i+1
+  print(allnums[i])
   mylist$Ydecl <- allnums[i]; i <- i+1
+  print(allnums[i])
   mylist$Yinit <- allnums[i]; i <- i+1
+  print(allnums[i])
   mylist$fleet_relative_F <- allnums[i]; i <- i+1
+  print(allnums[i])
   mylist$basis_for_fcast_catch_tuning <- allnums[i]; i <- i+1
   if(mylist$fleet_relative_F==2){
     rel_F <- data.frame(matrix(
@@ -2821,11 +2850,15 @@ rd_forecast <- function(file='forecast.ss', Nfleets, Nareas, Nseas, verbose=FALS
   }else{
     rel_F<-NULL
   }
+  print(rel_F)
   mylist$rel_F <- rel_F
+  print(allnums[i:(i+Nfleets-1)])
   mylist$max_totalcatch_by_fleet <- allnums[i:(i+Nfleets-1)]; i <- i+Nfleets
   if(verbose) cat("  max_totalcatch_by_fleet =",mylist$max_totalcatch_by_fleet,"\n")
+  print(allnums[i:(i+Nareas-1)])
   mylist$max_totalcatch_by_area <- allnums[i:(i+Nareas-1)]; i <- i+Nareas
   if(verbose) cat("  max_totalcatch_by_area =",mylist$max_totalcatch_by_area,"\n")
+  print(allnums[i:(i+Nfleets-1)])
   mylist$fleet_assignment_to_allocation_group <- allnums[i:(i+Nfleets-1)]; i <- i+Nfleets
   # allocation groups
   if(verbose) cat("  fleet_assignment_to_allocation_group =",mylist$fleet_assignment_to_allocation_group,"\n")
@@ -2836,7 +2869,11 @@ rd_forecast <- function(file='forecast.ss', Nfleets, Nareas, Nseas, verbose=FALS
     mylist$N_allocation_groups <- 0
     mylist$allocation_among_groups <- NULL
   }
+  print(mylist$N_allocation_groups)
+  print(mylist$allocation_among_groups)
+  print(allnums[i])
   mylist$Ncatch <- Ncatch <- allnums[i]; i <- i+1
+  print(allnums[i])
   mylist$InputBasis <- InputBasis <- allnums[i]; i <- i+1
   # forcast catch levels
   if(Ncatch==0){
@@ -2862,6 +2899,7 @@ rd_forecast <- function(file='forecast.ss', Nfleets, Nareas, Nseas, verbose=FALS
       print(ForeCatch)
     }
   }
+  print(ForeCatch)
   mylist$ForeCatch <- ForeCatch
   # check final value
   if(allnums[i]==999){
@@ -4974,7 +5012,7 @@ ReadCatch <- function(output,yrs){
   for(i in 1:output$nfishfleets){
     CatchMatrix[((i-1)*length(output$timeseries[,1])+1):(i*length(output$timeseries[,1])),1:3]<-as.matrix(output$timeseries[,c(2,4,1)])
     CatchMatrix[((i-1)*length(output$timeseries[,1])+1):(i*length(output$timeseries[,1])),4]<-rep(i,length(output$timeseries[,1]))
-    CatchMatrix[((i-1)*length(output$timeseries[,1])+1):(i*length(output$timeseries[,1])),5:12]<-as.matrix(output$timeseries[,(c(1:8)+(8+3*output$ngpatterns+8*(i-1)))])
+    CatchMatrix[((i-1)*length(output$timeseries[,1])+1):(i*length(output$timeseries[,1])),5:12]<-as.matrix(output$timeseries[,(c(1:8)+(8+output$ngpatterns+2*output$ngpatterns*output$nsexes+8*(i-1)))])
     CatchMatrix[((i-1)*length(output$timeseries[,1])+1):(i*length(output$timeseries[,1])),13]<-rep(c(output$sprseries[1:2,4],output$sprseries[,5]),output$nseasons*output$nareas)
     if(i==1){CatchMatrix[((i-1)*length(output$timeseries[,1])+1):(i*length(output$timeseries[,1])),17]<-c(c(std_F_Mat),rep(c(zero_Mat),(output$nareas-1)))
     }else{CatchMatrix[((i-1)*length(output$timeseries[,1])+1):(i*length(output$timeseries[,1])),17]<-rep(c(zero_Mat),output$nareas)}

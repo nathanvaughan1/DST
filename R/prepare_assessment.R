@@ -136,9 +136,9 @@ prepareAssessment<-function(input,output,session,output.prep,starter.prep,
   }
 
   dummyRetain<-matrix(0,nrow=4,ncol=14, dimnames=list(paste0("Size Retention ",1:4," fleet/Survey ",1),c("Low","Hi","Init","PriorValue","PriorType","PriorStDev","Phase","UseEnv","UseDev","DevMinYr","DevMaxYr","DevStDev","UseBlock","BlockType")))
-  dummyRetain[,1]<-c((-5*maxSize),-1000000,0,(-5*maxSize))
+  dummyRetain[,1]<-c((-5*maxSize),0.0001,0,(-5*maxSize))
   dummyRetain[,2]<-c((6*maxSize),1000000,1,(6*maxSize))
-  dummyRetain[,3]<-c(-1,0,1,0)
+  dummyRetain[,3]<-c(-1,0.001,1,0)
   dummyRetain[,5]<--1
   dummyRetain[,7]<--1
   dummyDisc<-dummyRetain
@@ -225,10 +225,56 @@ prepareAssessment<-function(input,output,session,output.prep,starter.prep,
       mirrorList[[i]]<-control.prep$Select_Params[(prevRow-7):prevRow,]
     }
 
-    if(control.prep$Size_Select[i,3]>0)
+    if(control.prep$Size_Select[i,3]==1)
     {
       prevRow<-prevRow+4
-    }
+      prevParLab<-prevParLab+4
+      prevParVal<-prevParVal+4
+    }else if(control.prep$Size_Select[i,3]==2)
+    {
+      prevRow<-prevRow+4
+      prevParLab<-prevParLab+4
+      prevParVal<-prevParVal+4
+    }else if(control.prep$Size_Select[i,3]==3)
+    {
+      if(control.prep$Size_Select[i,1]==1){
+        prevRow<-prevRow+3
+        prevParLab<-prevParLab+3
+        prevParVal<-prevParVal+3
+      }else if(control.prep$Size_Select[i,1]==20){
+        prevRow<-prevRow+5
+        prevParLab<-prevParLab+5
+        prevParVal<-prevParVal+5
+      }else if(control.prep$Size_Select[i,1]==23){
+        prevRow<-prevRow+5
+        prevParLab<-prevParLab+5
+        prevParVal<-prevParVal+5
+      }else if(control.prep$Size_Select[i,1]==24){
+        prevRow<-prevRow+5
+        prevParLab<-prevParLab+5
+        prevParVal<-prevParVal+5
+      }else{}
+
+    }else if(control.prep$Size_Select[i,3]==4)
+    {
+      if(control.prep$Size_Select[i,1]==1){
+        prevRow<-prevRow+3
+        prevParLab<-prevParLab+3
+        prevParVal<-prevParVal+3
+      }else if(control.prep$Size_Select[i,1]==20){
+        prevRow<-prevRow+5
+        prevParLab<-prevParLab+5
+        prevParVal<-prevParVal+5
+      }else if(control.prep$Size_Select[i,1]==23){
+        prevRow<-prevRow+5
+        prevParLab<-prevParLab+5
+        prevParVal<-prevParVal+5
+      }else if(control.prep$Size_Select[i,1]==24){
+        prevRow<-prevRow+5
+        prevParLab<-prevParLab+5
+        prevParVal<-prevParVal+5
+      }else{}
+    }else{}
   }
 
   wrt_ctl(file=paste0(dir.prep,"/",starter.prep$ctlfile),data.prep,control.prep)
