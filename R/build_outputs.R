@@ -456,6 +456,10 @@ buildUpdateQuota<-function(input, output, session){
   KobeSSB20<-sum(CatchMSYKobe[CatchMSYKobe[,1]==(input$ManagementYearInput+19),13])
   KobeB20<-sum(CatchMSYKobe[CatchMSYKobe[,1]==(input$ManagementYearInput+19),15])
   KobeF20<-sum(CatchMSYKobe[CatchMSYKobe[,1]==(input$ManagementYearInput+19),16])
+  KobeY2070<-sum(CatchMSYKobe[CatchMSYKobe[,1]==2070,6])
+  KobeSSB2070<-sum(CatchMSYKobe[CatchMSYKobe[,1]==2070,13])
+  KobeB2070<-sum(CatchMSYKobe[CatchMSYKobe[,1]==2070,15])
+  KobeF2070<-sum(CatchMSYKobe[CatchMSYKobe[,1]==2070,16])
 
   CatchNewKobe<-CatchOutRun1
   CatchNewKobe<-aggregate(CatchNewKobe,list(year=CatchNewKobe[,1]),sum)
@@ -479,7 +483,10 @@ buildUpdateQuota<-function(input, output, session){
   AppliedKobeSSB20<-sum(CatchOutRun1[CatchOutRun1[,1]==(input$ManagementYearInput+19),13])
   AppliedKobeB20<-sum(CatchOutRun1[CatchOutRun1[,1]==(input$ManagementYearInput+19),15])
   AppliedKobeF20<-sum(CatchOutRun1[CatchOutRun1[,1]==(input$ManagementYearInput+19),16])
-
+  AppliedKobeY2070<-sum(CatchOutRun1[CatchOutRun1[,1]==2070,6])
+  AppliedKobeSSB2070<-sum(CatchOutRun1[CatchOutRun1[,1]==2070,13])
+  AppliedKobeB2070<-sum(CatchOutRun1[CatchOutRun1[,1]==2070,15])
+  AppliedKobeF2070<-sum(CatchOutRun1[CatchOutRun1[,1]==2070,16])
 
 
   idOut1<-"timeSeriesPlotsOut"
@@ -495,10 +502,10 @@ buildUpdateQuota<-function(input, output, session){
   output$downloadOutput1<-downloadHandler(
     filename = "ICCAT_values.csv",
     content =function(file){
-      outVect1<-c(KobeMSY,KobeSSBMSY,KobeBMSY,KobeFMSY,KobeY1,KobeSSB1,KobeB1,KobeF1,KobeY5,KobeSSB5,KobeB5,KobeF5,KobeY10,KobeSSB10,KobeB10,KobeF10,KobeY20,KobeSSB20,KobeB20,KobeF20,KobeY1/KobeMSY,KobeSSB1/KobeSSBMSY,KobeB1/KobeBMSY,KobeF1/KobeFMSY,KobeY5/KobeMSY,KobeSSB5/KobeSSBMSY,KobeB5/KobeBMSY,KobeF5/KobeFMSY,KobeY10/KobeMSY,KobeSSB10/KobeSSBMSY,KobeB10/KobeBMSY,KobeF10/KobeFMSY,KobeY20/KobeMSY,KobeSSB20/KobeSSBMSY,KobeB20/KobeBMSY,KobeF20/KobeFMSY)
-      outVect2<-c(AppliedKobeMSY,AppliedKobeSSBMSY,AppliedKobeBMSY,AppliedKobeFMSY,AppliedKobeY1,AppliedKobeSSB1,AppliedKobeB1,AppliedKobeF1,AppliedKobeY5,AppliedKobeSSB5,AppliedKobeB5,AppliedKobeF5,AppliedKobeY10,AppliedKobeSSB10,AppliedKobeB10,AppliedKobeF10,AppliedKobeY20,AppliedKobeSSB20,AppliedKobeB20,AppliedKobeF20,AppliedKobeY1/KobeMSY,AppliedKobeSSB1/KobeSSBMSY,AppliedKobeB1/KobeBMSY,AppliedKobeF1/KobeFMSY,AppliedKobeY5/KobeMSY,AppliedKobeSSB5/KobeSSBMSY,AppliedKobeB5/KobeBMSY,AppliedKobeF5/KobeFMSY,AppliedKobeY10/KobeMSY,AppliedKobeSSB10/KobeSSBMSY,AppliedKobeB10/KobeBMSY,AppliedKobeF10/KobeFMSY,AppliedKobeY20/KobeMSY,AppliedKobeSSB20/KobeSSBMSY,AppliedKobeB20/KobeBMSY,AppliedKobeF20/KobeFMSY)
-      outMatrix<-as.data.frame(matrix(c(outVect1,outVect2),nrow=2,ncol=36,byrow = TRUE))
-      names(outMatrix)<-c("Yieldequil","SSBequi","Bequil","Fequil","Yield1yr","SSB1yr","B1yr","F1yr","Yield5yr","SSB5yr","B5yr","F5yr","Yield10yr","SSB10yr","B10yr","F10yr","Yield20yr","SSB20yr","B20yr","F20yr","Yield1yr/MSY","SSB1yr/SSBmsy","B1yr/Bmsy","F1yr/Fmsy","Yield5yr/MSY","SSB5yr/SSBmsy","B5yr/Bmsy","F5yr/Fmsy","Yield10yr/MSY","SSB10yr/SSBmsy","B10yr/Bmsy","F10yr/Fmsy","Yield20yr/MSY","SSB20yr/SSBmsy","B20yr/Bmsy","F20yr/Fmsy")
+      outVect1<-c(KobeMSY,KobeSSBMSY,KobeBMSY,KobeFMSY,KobeY1,KobeSSB1,KobeB1,KobeF1,KobeY5,KobeSSB5,KobeB5,KobeF5,KobeY10,KobeSSB10,KobeB10,KobeF10,KobeY20,KobeSSB20,KobeB20,KobeF20,KobeY2070,KobeSSB2070,KobeB2070,KobeF2070,KobeY1/KobeMSY,KobeSSB1/KobeSSBMSY,KobeB1/KobeBMSY,KobeF1/KobeFMSY,KobeY5/KobeMSY,KobeSSB5/KobeSSBMSY,KobeB5/KobeBMSY,KobeF5/KobeFMSY,KobeY10/KobeMSY,KobeSSB10/KobeSSBMSY,KobeB10/KobeBMSY,KobeF10/KobeFMSY,KobeY20/KobeMSY,KobeSSB20/KobeSSBMSY,KobeB20/KobeBMSY,KobeF20/KobeFMSY)
+      outVect2<-c(KobeMSY,KobeSSBMSY,KobeBMSY,KobeFMSY,AppliedKobeY1,AppliedKobeSSB1,AppliedKobeB1,AppliedKobeF1,AppliedKobeY5,AppliedKobeSSB5,AppliedKobeB5,AppliedKobeF5,AppliedKobeY10,AppliedKobeSSB10,AppliedKobeB10,AppliedKobeF10,AppliedKobeY20,AppliedKobeSSB20,AppliedKobeB20,AppliedKobeF2070,AppliedKobeY2070,AppliedKobeSSB2070,AppliedKobeB2070,AppliedKobeF2070,AppliedKobeY1/KobeMSY,AppliedKobeSSB1/KobeSSBMSY,AppliedKobeB1/KobeBMSY,AppliedKobeF1/KobeFMSY,AppliedKobeY5/KobeMSY,AppliedKobeSSB5/KobeSSBMSY,AppliedKobeB5/KobeBMSY,AppliedKobeF5/KobeFMSY,AppliedKobeY10/KobeMSY,AppliedKobeSSB10/KobeSSBMSY,AppliedKobeB10/KobeBMSY,AppliedKobeF10/KobeFMSY,AppliedKobeY20/KobeMSY,AppliedKobeSSB20/KobeSSBMSY,AppliedKobeB20/KobeBMSY,AppliedKobeF20/KobeFMSY)
+      outMatrix<-as.data.frame(matrix(c(outVect1,outVect2),nrow=2,ncol=40,byrow = TRUE))
+      names(outMatrix)<-c("Yieldequil","SSBequi","Bequil","Fequil","Yield1yr","SSB1yr","B1yr","F1yr","Yield5yr","SSB5yr","B5yr","F5yr","Yield10yr","SSB10yr","B10yr","F10yr","Yield20yr","SSB20yr","B20yr","F20yr","Yield2070","SSB2070","B2070","F2070","Yield1yr/MSY","SSB1yr/SSBmsy","B1yr/Bmsy","F1yr/Fmsy","Yield5yr/MSY","SSB5yr/SSBmsy","B5yr/Bmsy","F5yr/Fmsy","Yield10yr/MSY","SSB10yr/SSBmsy","B10yr/Bmsy","F10yr/Fmsy","Yield20yr/MSY","SSB20yr/SSBmsy","B20yr/Bmsy","F20yr/Fmsy")
       row.names(outMatrix)<-c("MSY","Applied")
       write.csv(outMatrix,file,row.names = FALSE)
     },
