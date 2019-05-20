@@ -534,15 +534,25 @@ buildObservers<-function(input, output, session, observers=0){
           if(as.numeric(input$ForecastTarget)==2){
             isolate({
               hideElement(id="TargetValue")
-              showElement(id="TargetYears")})
+              showElement(id="TargetYears")
+              showElement(id="ForecastApplied")
+              })
           }else if(as.numeric(input$ForecastTarget)==4){
             isolate({
               hideElement(id="TargetValue")
-              hideElement(id="TargetYears")})
+              hideElement(id="TargetYears")
+              showElement(id="ForecastApplied")})
+          }else if(as.numeric(input$ForecastTarget)==5){
+            isolate({
+              hideElement(id="TargetValue")
+              hideElement(id="TargetYears")
+              hideElement(id="ForecastApplied")
+              })
           }else{
             isolate({
               showElement(id="TargetValue")
-              showElement(id="TargetYears")})
+              showElement(id="TargetYears")
+              showElement(id="ForecastApplied")})
           }
         }
       })
@@ -703,7 +713,7 @@ buildObservers<-function(input, output, session, observers=0){
       CatchUnits<-rep(0,data.orig$Nfleet)
       withProgress(message="resetting fleet proportion values",value=0.5,{
         for(i_in in 1:data.orig$Nfleet){
-          local({
+          #local({
             i<-i_in
             if(!is.null(eval(parse(text=paste0("input$displaySeason")))) &
                !is.null(eval(parse(text=paste0("input$Group",forecast.orig$fleet_assignment_to_allocation_group[i],"FleetAllocUnits")))) &
@@ -737,7 +747,7 @@ buildObservers<-function(input, output, session, observers=0){
                     }else{
                       hideElement(id=paste0("fleet",i,"recentCatchQuantAll"))
                     }
-
+                    showElement(id=paste0("fleet",i,"seas",j,"recentCatchQuantAll"))
                     updateTextInput(session=session,inputId=paste0("fleet",i,"seas",j,"recentCatchQuantAll"),value = as.numeric(eval(parse(text=paste0("input$fleet",i,"recentCatchQuantAll"))))*(tempData[j,i]/sum(tempData[,i])))
                     hideElement(id=paste0("fleet",i,"seas",j,"recentCatchQuantAll"))
 
@@ -790,7 +800,7 @@ buildObservers<-function(input, output, session, observers=0){
                 }
               })
             }
-          })
+          #})
         }
       })
     })
