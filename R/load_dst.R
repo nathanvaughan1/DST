@@ -224,6 +224,8 @@ observeEvent(input$chooseAssessment,{
 
 observeEvent(input$updateAssessment,{
   #print("running oberserver 27")
+
+
   runUpdateAssessment2(input, output, session)
 
   updateNavbarPage(session=session, inputId = "mainNavBar",selected="Forecast Results")

@@ -12,6 +12,7 @@
 #' @keywords interface management
 runUpdateAssessment2<-function(input, output, session){
   withProgress(message="Running new assessment forecast",value=0,{
+
     if(input$ForecastApplied!=4){
       duplicateFleets(input,output,session)
       RunTargetForecast(input,output,session)
@@ -242,7 +243,7 @@ getMangementLimits<-function(input, output, session){
                 }
               }else{
                 managementLimits$pastCatch[currRowDummy,5]<-checkInput[1,5]
-                if(checkInput[1,5]==2 |checkInput[1,5]==3){
+                if(checkInput[1,5]==2 | checkInput[1,5]==3){
                   managementLimits$pastCatch[currRowDummy,4]<-managementLimits$pastCatch[currRowDummy,4]/weightScale[disp.Desc$Units[1]]
                 }
               }
@@ -1129,7 +1130,46 @@ duplicateFleets<-function(input, output, session){
 #' @author Nathan Vaughan
 #' @keywords assessment projection
 RunTargetForecast<-function(input, output, session){
-  if(input$ForecastTarget!=4)
+  if(input$ForecastTarget==5){
+    incProgress(0.1, detail = paste0("Running fixed catch projection ")) #0.4 total
+    shell(paste("cd /d ",dir.run," && ss3 -nohess",sep=""))
+
+    output.read<-FALSE
+    output.temp<-NULL
+    while(output.read==FALSE){
+      try({output.temp<-rd_output(dir.run, covar=F, ncol=numCols)})
+      if(is.null(output.temp)){
+        output.read<-FALSE
+        numCols<<-numCols+100
+      }else{
+        output.read<-TRUE
+        output.run<<-output.temp
+      }
+    }
+
+    dir.msy<<-paste0(dir.base,"/msy")
+    if(!dir.exists(dir.msy))
+    {
+      incProgress(0.0, detail = paste0("Building MSY directory"))
+      dir.create(dir.msy)
+      files.run<-list.files(dir.run)
+      file.copy(paste0(dir.run,"/",files.run),dir.msy)
+    }else{
+      incProgress(0.0, detail = paste0("Saving MSY results"))
+      files.msy<-list.files(dir.msy)
+      unlink(paste0(dir.msy,"/",files.msy))
+      files.run<-list.files(dir.run)
+      file.copy(paste0(dir.run,"/",files.run),dir.msy)
+    }
+    incProgress(0.1, detail = paste0("Processing MSY catch data (this could take a few minutes)"))
+    msyCatch<<-ReadCatch(output.run, (data.orig$styr-1):(data.orig$endyr+forecast.orig$Nforecastyrs))
+    starter.msy<<-starter.run
+    data.msy<<-data.run
+    forecast.msy<<-forecast.run
+    control.msy<<-control.run
+    output.msy<<-output.run
+    pars.msy<<-pars.run
+  }else if(input$ForecastTarget!=4)
   {
     if(input$ForecastTarget==1)
     {

@@ -1418,7 +1418,7 @@ rd_ctl <- function(file, data_input){
     if(length(ctlVals[[readLine]])==14)
     {
       MG_Params<-rbind(MG_Params,ctlVals[[readLine]])
-      rownames(MG_Params)[length(MG_Params)]<-"Hinfage"
+      rownames(MG_Params)[length(MG_Params[,1])]<-"Hinfage"
       outText<-paste(ctlVals[[readLine]],collapse = " ")
       print(paste("Hermaphrodite inflection age = ",outText,sep=""))
       readLine<-readLine+1
