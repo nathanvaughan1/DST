@@ -308,7 +308,7 @@ buildForecastChoices<-function(input, output, session){
   newSlider("ManagementYearCol3","ManagementYearInput",titleText="Management Starting Year",min=data.orig$endyr,max=(as.integer(format(Sys.Date(), "%Y"))+10),value=(as.integer(format(Sys.Date(), "%Y"))+1),step=1,sep="")
 
   #input$ManagementYearInput<<-(as.integer(format(Sys.Date(), "%Y"))+1)
-  targetNames<<-c("SPR","Spawning Biomass Ratio","Maximize Catch","Use previous estimate","Fixed forecast")
+  targetNames<<-c("SPR","Spawning Biomass Ratio","Maximize Catch","Maximize Economic Yield","Use previous estimate","Fixed forecast")
   targetNames2<<-c("SPR Target Value","Ignore ","Spawning Biomass Ratio")
   targetNames3<<-c("Implement Optimal","Fixed Fraction Fmsy","Constant Catch")#,"Kobe Matrix")
   #targetNames3<<-c("Implement Optimal","Fixed Fraction Fmsy","Constant Catch","Kobe Matrix")
@@ -316,12 +316,14 @@ buildForecastChoices<-function(input, output, session){
 
   dir.msy<<-paste0(dir.base,"/msy")
   if(dir.exists(dir.msy)){
-    newRadio("ManagementYearCol4","ForecastTarget",label="Optimal Fishing Target",selected=forecast.orig$MSY,choiceNames=targetNames,choiceValues=c(1,3,2,4,5),inline=FALSE)
+    newRadio("ManagementYearCol4","ForecastTarget",label="Optimal Fishing Target",selected=forecast.orig$MSY,choiceNames=targetNames,choiceValues=c(1,3,2,6,4,5),inline=FALSE)
   }else{
-    newRadio("ManagementYearCol4","ForecastTarget",label="Optimal Fishing Target",selected=forecast.orig$MSY,choiceNames=targetNames[c(1:3,5)],choiceValues=c(1,3,2,5),inline=FALSE)
+    newRadio("ManagementYearCol4","ForecastTarget",label="Optimal Fishing Target",selected=forecast.orig$MSY,choiceNames=targetNames[c(1:4,6)],choiceValues=c(1,3,2,6,5),inline=FALSE)
   }
   newSlider("ManagementYearCol5","TargetValue",titleText=targetNames2[forecast.orig$MSY],min=0,max=1,value=targetValue[forecast.orig$MSY],step=0.01)
-
+  
+  newTextAreaInput("ManagementYearCol5","CostBenefits",titleText="Costs and Benefits",placement="beforeEnd",cols=12,rows=20,hidden=FALSE,immediate=FALSE)
+    
   newSlider("ManagementYearCol5","TargetYears",titleText="Optimal target year range",min=data.orig$endyr,max=(data.orig$endyr+forecast.orig$Nforecastyrs),value=disp.Desc$TargetYears,step=1,sep="")
 
   #newRadio("ManagementYearCol6","ForecastApplied",label="Implemented Fishing",selected=1,choiceNames=targetNames3,choiceValues=c(1,2,3,4),inline=FALSE)
