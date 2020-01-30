@@ -1239,7 +1239,7 @@ RunTargetForecast<-function(input, output, session){
         return(Val)
       }
       #browser()
-      temp_str<-as.numeric(strsplit(input$CostBenefits,split="[,\n ]+")[[1]])
+      temp_str<-as.numeric(strsplit(input$CostBenefits,split="[,\n \t]+")[[1]])
       temp_str<-temp_str[!is.na(temp_str)]
       temp_str<-temp_str[temp_str!=""]
       ProfitMatrix_temp<-matrix(temp_str,ncol=4,byrow=TRUE)

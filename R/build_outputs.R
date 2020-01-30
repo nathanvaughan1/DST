@@ -308,7 +308,7 @@ buildUpdateQuota<-function(input, output, session){
     return(Val)
   }
   #browser()
-  temp_str<-as.numeric(strsplit(input$CostBenefits,split="[,\n ]+")[[1]])
+  temp_str<-as.numeric(strsplit(input$CostBenefits,split="[,\n \t]+")[[1]])
   temp_str<-temp_str[!is.na(temp_str)]
   temp_str<-temp_str[temp_str!=""]
   ProfitMatrix_temp<-matrix(temp_str,ncol=4,byrow=TRUE)
@@ -1105,6 +1105,48 @@ buildKobeMatrix<-function(input,output,session,iteration,MSYoutput=NULL){
 #' @author Nathan Vaughan
 #' @keywords interface management
 saveCurrResults<-function(input,output,session,baseSaveName){
+  
+  get_Cost_Benefit<-function(Point_value=NULL,Val_series=NULL,Quant_Series=NULL){
+    lower_1<-Quant_Series[Quant_Series<=Point_value]
+    lower_1<-lower_1[length(lower_1)]
+    upper_1<-Quant_Series[Quant_Series>=Point_value]
+    upper_1<-upper_1[1]
+    lower_2<-Val_series[Quant_Series<=Point_value]
+    lower_2<-lower_2[length(lower_2)]
+    upper_2<-Val_series[Quant_Series>=Point_value]
+    upper_2<-upper_2[1]
+    
+    if(upper_1==lower_1){
+      Val<-Point_value*((upper_2+lower_2)/2)
+    }else{
+      Val<-Point_value*(lower_2+((Point_value-lower_1)/(upper_1-lower_1))*(upper_2-lower_2))
+    }
+    return(Val)
+  }
+  #browser()
+  temp_str<-as.numeric(strsplit(input$CostBenefits,split="[,\n \t]+")[[1]])
+  temp_str<-temp_str[!is.na(temp_str)]
+  temp_str<-temp_str[temp_str!=""]
+  ProfitMatrix_temp<-matrix(temp_str,ncol=4,byrow=TRUE)
+  #ProfitMatrix_temp<-matrix(as.numeric(strsplit(input$CostBenefits,split="[,\n ]+")[[1]]),ncol=4,byrow=TRUE)
+  ProfitMatrix_temp<-ProfitMatrix_temp[order(ProfitMatrix_temp[,1],ProfitMatrix_temp[,2],ProfitMatrix_temp[,3]),]
+  nCatches<-length(unique(ProfitMatrix_temp[ProfitMatrix_temp[,2]==1,3]))
+  CatchSeq<-c(0,sort(unique(ProfitMatrix_temp[ProfitMatrix_temp[,2]==1,3])),Inf)
+  nFs<-length(unique(ProfitMatrix_temp[ProfitMatrix_temp[,2]==2,3]))
+  FSeq<-c(0,sort(unique(ProfitMatrix_temp[ProfitMatrix_temp[,2]==2,3])),Inf)
+  nFls<-length(unique(ProfitMatrix_temp[,1]))
+  FleetSeq<-sort(unique(ProfitMatrix_temp[,1]))
+  CostMatrix<-matrix(NA,nrow=nFls,ncol=(nFs+2))
+  BenefitMatrix<-matrix(NA,nrow=nFls,ncol=(nCatches+2))
+  for(i in 1:nFls){
+    CostMatrix[i,2:(nFs+1)]<-ProfitMatrix_temp[ProfitMatrix_temp[,1]==i & ProfitMatrix_temp[,2]==2,4]
+    BenefitMatrix[i,2:(nCatches+1)]<-ProfitMatrix_temp[ProfitMatrix_temp[,1]==i & ProfitMatrix_temp[,2]==1,4]
+    CostMatrix[i,1]<-CostMatrix[i,2]
+    CostMatrix[i,(nFs+2)]<-CostMatrix[i,(nFs+1)]
+    BenefitMatrix[i,1]<-BenefitMatrix[i,2]
+    BenefitMatrix[i,(nCatches+2)]<-BenefitMatrix[i,(nCatches+1)]
+  }
+  
   color <- colors()[grep('gr(a|e)y', colors(), invert = T)]
   color <- color[8:433]
   color <- sample(color,length(color))
