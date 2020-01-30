@@ -288,6 +288,49 @@ buildBaseQuota<-function(input, output, session){
 buildUpdateQuota<-function(input, output, session){
   incProgress(0.1, detail = paste0("Building output results display"))
 
+
+  
+  get_Cost_Benefit<-function(Point_value=NULL,Val_series=NULL,Quant_Series=NULL){
+    lower_1<-Quant_Series[Quant_Series<=Point_value]
+    lower_1<-lower_1[length(lower_1)]
+    upper_1<-Quant_Series[Quant_Series>=Point_value]
+    upper_1<-upper_1[1]
+    lower_2<-Val_series[Quant_Series<=Point_value]
+    lower_2<-lower_2[length(lower_2)]
+    upper_2<-Val_series[Quant_Series>=Point_value]
+    upper_2<-upper_2[1]
+    
+    if(upper_1==lower_1){
+      Val<-Point_value*((upper_2+lower_2)/2)
+    }else{
+      Val<-Point_value*(lower_2+((Point_value-lower_1)/(upper_1-lower_1))*(upper_2-lower_2))
+    }
+    return(Val)
+  }
+  #browser()
+  temp_str<-as.numeric(strsplit(input$CostBenefits,split="[,\n ]+")[[1]])
+  temp_str<-temp_str[!is.na(temp_str)]
+  temp_str<-temp_str[temp_str!=""]
+  ProfitMatrix_temp<-matrix(temp_str,ncol=4,byrow=TRUE)
+  #ProfitMatrix_temp<-matrix(as.numeric(strsplit(input$CostBenefits,split="[,\n ]+")[[1]]),ncol=4,byrow=TRUE)
+  ProfitMatrix_temp<-ProfitMatrix_temp[order(ProfitMatrix_temp[,1],ProfitMatrix_temp[,2],ProfitMatrix_temp[,3]),]
+  nCatches<-length(unique(ProfitMatrix_temp[ProfitMatrix_temp[,2]==1,3]))
+  CatchSeq<-c(0,sort(unique(ProfitMatrix_temp[ProfitMatrix_temp[,2]==1,3])),Inf)
+  nFs<-length(unique(ProfitMatrix_temp[ProfitMatrix_temp[,2]==2,3]))
+  FSeq<-c(0,sort(unique(ProfitMatrix_temp[ProfitMatrix_temp[,2]==2,3])),Inf)
+  nFls<-length(unique(ProfitMatrix_temp[,1]))
+  FleetSeq<-sort(unique(ProfitMatrix_temp[,1]))
+  CostMatrix<-matrix(NA,nrow=nFls,ncol=(nFs+2))
+  BenefitMatrix<-matrix(NA,nrow=nFls,ncol=(nCatches+2))
+  for(i in 1:nFls){
+    CostMatrix[i,2:(nFs+1)]<-ProfitMatrix_temp[ProfitMatrix_temp[,1]==i & ProfitMatrix_temp[,2]==2,4]
+    BenefitMatrix[i,2:(nCatches+1)]<-ProfitMatrix_temp[ProfitMatrix_temp[,1]==i & ProfitMatrix_temp[,2]==1,4]
+    CostMatrix[i,1]<-CostMatrix[i,2]
+    CostMatrix[i,(nFs+2)]<-CostMatrix[i,(nFs+1)]
+    BenefitMatrix[i,1]<-BenefitMatrix[i,2]
+    BenefitMatrix[i,(nCatches+2)]<-BenefitMatrix[i,(nCatches+1)]
+  }
+  
   removeUI("#currOutput>*",multiple=TRUE,immediate=TRUE)
   removeUI("#currOutput",multiple=TRUE,immediate=TRUE)
   newDiv("QuotaForecast","currOutput")
@@ -304,7 +347,11 @@ buildUpdateQuota<-function(input, output, session){
   newColumn("yearRangeInputs","yearRangeInputs2",width = 12)
   newColumn("forecastResults","NewQuotaGraph",width = 8)
   newFluidRow("TimeSeriesInputs2","displayRadioOut")
-  newRadio(location="DataChoiceInputs2",id="displayRadioButtonOut5",label="Projection dispay data:",choices=c("Landings","Dead Discards","Harvest Rate","SSB","Population Biomass","Recruits","Kobe"),selected="Landings",inline=TRUE)
+  if(input$ForecastTarget==6){
+    newRadio(location="DataChoiceInputs2",id="displayRadioButtonOut5",label="Projection dispay data:",choices=c("Landings","Dead Discards","Harvest Rate","Economics","SSB","Population Biomass","Recruits","Kobe"),selected="Landings",inline=TRUE)
+  }else{
+    newRadio(location="DataChoiceInputs2",id="displayRadioButtonOut5",label="Projection dispay data:",choices=c("Landings","Dead Discards","Harvest Rate","SSB","Population Biomass","Recruits","Kobe"),selected="Landings",inline=TRUE)
+  }
   newRadio(location="TimeSeriesInputs2",id="displayRadioButtonOut1",label="Forecast results source:",choices=c("Base","Target","Implemented"),selected="Implemented",inline=TRUE)
   newRadio(location="TimeSeriesInputs2",id="displayRadioButtonOut7",label="Source relative to:",choices=c("Raw","Base","Target"),selected="Raw",inline=TRUE)
   newRadio(location="TimeSeriesInputs2",id="displayRadioButtonOut8",label="Difference format:",choices=c("Absolute","Percentage","Proportion"),selected="Absolute",inline=TRUE)
@@ -331,6 +378,10 @@ buildUpdateQuota<-function(input, output, session){
     newRadio(location="TimeSeriesInputs2",id="displayRadioButtonOut",label="Partition fishery by:",choices=c("Total","Groups","Fleets"),selected="Total",inline=TRUE)
   }
 
+  
+  newRadio(location="TimeSeriesInputs2",id="displayRadioButtonOut9",label="Economic data to display:",choices=c("Costs","Benefits","Profits"),selected="Profits",inline=TRUE)
+  
+  
   color <- colors()[grep('gr(a|e)y', colors(), invert = T)]
   color <- color[8:433]
   color <- sample(color,length(color))
@@ -364,34 +415,70 @@ buildUpdateQuota<-function(input, output, session){
   names(CatchOutRun1)<-c("Year","Season","Area","Fleet","Group","Retain(B)","Discard(B)","Retain(N)","Discard(N)","Retain(Basis)","HarvestRate(F)","SPR","SSB","Recruits","PopBiomass","F(Std)")
   CatchOutRun1<-CatchOutRun1[order(CatchOutRun1[,3],CatchOutRun1[,1],CatchOutRun1[,2],CatchOutRun1[,4]),]
 
+  if(input$ForecastTarget==6){
+    CatchOut1Cost<-CatchOut1[,1]
+    CatchOut1Benefit<-CatchOut1[,1]
+    CatchOutMSY1Cost<-CatchOut1[,1]
+    CatchOutMSY1Benefit<-CatchOut1[,1]
+    CatchOutRun1Cost<-CatchOut1[,1]
+    CatchOutRun1Benefit<-CatchOut1[,1]
+    
+    for(i in unique(CatchOut1[,4])){
+      CatchOut1Cost[which(CatchOut1[,4]==i)]<-vapply(CatchOut1[which(CatchOut1[,4]==i),11],get_Cost_Benefit,Val_series=CostMatrix[i,],Quant_Series=FSeq,FUN.VALUE = 1)
+      CatchOut1Benefit[which(CatchOut1[,4]==i)]<-vapply(CatchOut1[which(CatchOut1[,4]==i),6],get_Cost_Benefit,Val_series=BenefitMatrix[i,],Quant_Series=CatchSeq,FUN.VALUE = 1)
+      CatchOutMSY1Cost[which(CatchOutMSY1[,4]==i)]<-vapply(CatchOutMSY1[which(CatchOutMSY1[,4]==i),11],get_Cost_Benefit,Val_series=CostMatrix[i,],Quant_Series=FSeq,FUN.VALUE = 1)
+      CatchOutMSY1Benefit[which(CatchOutMSY1[,4]==i)]<-vapply(CatchOutMSY1[which(CatchOutMSY1[,4]==i),6],get_Cost_Benefit,Val_series=BenefitMatrix[i,],Quant_Series=CatchSeq,FUN.VALUE = 1)
+      CatchOutRun1Cost[which(CatchOutRun1[,4]==i)]<-vapply(CatchOutRun1[which(CatchOutRun1[,4]==i),11],get_Cost_Benefit,Val_series=CostMatrix[i,],Quant_Series=FSeq,FUN.VALUE = 1)
+      CatchOutRun1Benefit[which(CatchOutRun1[,4]==i)]<-vapply(CatchOutRun1[which(CatchOutRun1[,4]==i),6],get_Cost_Benefit,Val_series=BenefitMatrix[i,],Quant_Series=CatchSeq,FUN.VALUE = 1)
+    }
+    
+    CatchOut1<-cbind(CatchOut1[,1:16],CatchOut1[,14:16])
+    CatchOut1[,17]<-CatchOut1Cost
+    CatchOut1[,18]<-CatchOut1Benefit
+    CatchOut1[,19]<-CatchOut1Benefit-CatchOut1Cost
+    
+    CatchOutMSY1<-cbind(CatchOutMSY1[,1:16],CatchOutMSY1[,14:16])
+    CatchOutMSY1[,17]<-CatchOutMSY1Cost
+    CatchOutMSY1[,18]<-CatchOutMSY1Benefit
+    CatchOutMSY1[,19]<-CatchOutMSY1Benefit-CatchOutMSY1Cost
+    
+    CatchOutRun1<-cbind(CatchOutRun1[,1:16],CatchOutRun1[,14:16])
+    CatchOutRun1[,17]<-CatchOutRun1Cost
+    CatchOutRun1[,18]<-CatchOutRun1Benefit
+    CatchOutRun1[,19]<-CatchOutRun1Benefit-CatchOutRun1Cost
+    
+    names(CatchOut1)<-names(CatchOutMSY1)<-names(CatchOutRun1)<-c("Year","Season","Area","Fleet","Group","Retain(B)","Discard(B)","Retain(N)","Discard(N)","Retain(Basis)","HarvestRate(F)","SPR","SSB","Recruits","PopBiomass","F(Std)","Cost","Benefit","Profit")
+  }
+  
+  lcatch<-length(CatchOutRun1[1,])
   CatchOutDiffMB1<-CatchOutRun1
-  CatchOutDiffMB1[,6:16]<-(CatchOutMSY1[,6:16]-CatchOut1[,6:16])
+  CatchOutDiffMB1[,6:lcatch]<-(CatchOutMSY1[,6:lcatch]-CatchOut1[,6:lcatch])
 
   CatchOutDiffRB1<-CatchOutRun1
-  CatchOutDiffRB1[,6:16]<-(CatchOutRun1[,6:16]-CatchOut1[,6:16])
+  CatchOutDiffRB1[,6:lcatch]<-(CatchOutRun1[,6:lcatch]-CatchOut1[,6:lcatch])
 
   CatchOutDiffRM1<-CatchOutRun1
-  CatchOutDiffRM1[,6:16]<-(CatchOutRun1[,6:16]-CatchOutMSY1[,6:16])
+  CatchOutDiffRM1[,6:lcatch]<-(CatchOutRun1[,6:lcatch]-CatchOutMSY1[,6:lcatch])
 
   CatchOutPercMB1<-CatchOutRun1
-  CatchOutPercMB1[,6:16]<-100*(CatchOutMSY1[,6:16]-CatchOut1[,6:16])/CatchOut1[,6:16]
+  CatchOutPercMB1[,6:lcatch]<-100*(CatchOutMSY1[,6:lcatch]-CatchOut1[,6:lcatch])/CatchOut1[,6:lcatch]
 
   CatchOutPercRB1<-CatchOutRun1
-  CatchOutPercRB1[,6:16]<-100*(CatchOutRun1[,6:16]-CatchOut1[,6:16])/CatchOut1[,6:16]
+  CatchOutPercRB1[,6:lcatch]<-100*(CatchOutRun1[,6:lcatch]-CatchOut1[,6:lcatch])/CatchOut1[,6:lcatch]
 
   CatchOutPercRM1<-CatchOutRun1
-  CatchOutPercRM1[,6:16]<-100*(CatchOutRun1[,6:16]-CatchOutMSY1[,6:16])/CatchOutMSY1[,6:16]
+  CatchOutPercRM1[,6:lcatch]<-100*(CatchOutRun1[,6:lcatch]-CatchOutMSY1[,6:lcatch])/CatchOutMSY1[,6:lcatch]
 
   CatchOutPropMB1<-CatchOutRun1
-  CatchOutPropMB1[,6:16]<-CatchOutMSY1[,6:16]/CatchOut1[,6:16]
+  CatchOutPropMB1[,6:lcatch]<-CatchOutMSY1[,6:lcatch]/CatchOut1[,6:lcatch]
 
   CatchOutPropRB1<-CatchOutRun1
-  CatchOutPropRB1[,6:16]<-CatchOutRun1[,6:16]/CatchOut1[,6:16]
+  CatchOutPropRB1[,6:lcatch]<-CatchOutRun1[,6:lcatch]/CatchOut1[,6:lcatch]
 
   CatchOutPropRM1<-CatchOutRun1
-  CatchOutPropRM1[,6:16]<-CatchOutRun1[,6:16]/CatchOutMSY1[,6:16]
+  CatchOutPropRM1[,6:lcatch]<-CatchOutRun1[,6:lcatch]/CatchOutMSY1[,6:lcatch]
 
-  for(i in 6:16)
+  for(i in 6:lcatch)
   {
     CatchOutPercMB1[,i]<-ifelse(!is.finite(CatchOutPercMB1[,i]),0,CatchOutPercMB1[,i])
     CatchOutPercRB1[,i]<-ifelse(!is.finite(CatchOutPercRB1[,i]),0,CatchOutPercRB1[,i])
@@ -412,6 +499,19 @@ buildUpdateQuota<-function(input, output, session){
   newDownload(location='yearRangeInputs2',id="downloadOutput3",label="Download SS3 Report")
 
   observerPool[[21]]<<-observe({
+    if(input$ForecastTarget==6){
+      if(!is.null(input$displayRadioButtonOut5)){
+        if(input$displayRadioButtonOut5=="Economics"){
+          showElement(id="displayRadioButtonOut9")
+        }else{
+          hideElement(id="displayRadioButtonOut9")
+        }
+      }else{
+        hideElement(id="displayRadioButtonOut9")
+      }
+    }else{
+      hideElement(id="displayRadioButtonOut9")
+    }
     if(is.null(input$downloadOptions)){
       hideElement(id="downloadOutput1")
       hideElement(id="downloadOutput2")
@@ -561,6 +661,7 @@ buildUpdateQuota<-function(input, output, session){
          !is.null(input$displayRadioButtonOut5) &
          !is.null(input$displayRadioButtonOut7) &
          !is.null(input$displayRadioButtonOut8) &
+         !is.null(input$displayRadioButtonOut9) &
          !is.null(input$displayYearsOut))
       {
         xlimOut=c((input$displayYearsOut[1]-1),(input$displayYearsOut[2]+3))
@@ -623,6 +724,23 @@ buildUpdateQuota<-function(input, output, session){
             catMod<-"Harvest Rate"
             catMod2<-"Harvest Rate"
             dataColOut<-c(1:5,16)
+          }else if(input$displayRadioButtonOut5=="Economics")
+          {
+            unitMod<-"Dollars"
+            if(input$displayRadioButtonOut9=="Costs"){
+              catMod<-"Gross Costs"
+              catMod2<-"Gross Costs"
+              dataColOut<-c(1:5,17)
+            }else if(input$displayRadioButtonOut9=="Benefits"){
+              catMod<-"Gross Revenue"
+              catMod2<-"Gross Revenue"
+              dataColOut<-c(1:5,18)
+            }else if(input$displayRadioButtonOut9=="Profits"){
+              catMod<-"Net Profits"
+              catMod2<-"Net Profits"
+              dataColOut<-c(1:5,19)
+            }
+            
           }else if(input$displayRadioButtonOut5!="Landings" & input$displayRadioButtonOut5!="Dead Discards")
           {
             unitMod<-weightNames[disp.Desc$Units[1]]
@@ -766,7 +884,12 @@ buildUpdateQuota<-function(input, output, session){
 
           if(makePlot==TRUE)
           {
-            potNamesCatch<-c("Year","Season","Area","Fleet","Group","Retain(B)","Discard(B)","Retain(N)","Discard(N)","Retain(Basis)","HarvestRate(F)","SPR","SSB","Recruits","PopBiomass","HarvestRate(F)")
+            if(input$ForecastTarget==6){
+              potNamesCatch<-c("Year","Season","Area","Fleet","Group","Retain(B)","Discard(B)","Retain(N)","Discard(N)","Retain(Basis)","HarvestRate(F)","SPR","SSB","Recruits","PopBiomass","HarvestRate(F)","Cost","Benefit","Profit")
+            }else{
+              potNamesCatch<-c("Year","Season","Area","Fleet","Group","Retain(B)","Discard(B)","Retain(N)","Discard(N)","Retain(Basis)","HarvestRate(F)","SPR","SSB","Recruits","PopBiomass","HarvestRate(F)")
+            }
+            
             CatchDisp<-CatchDisp[,dataColOut]
             CatchDisp2<-CatchDisp2[,dataColOut]
             if("Area"%in%input$displayRadioButtonOut6 | length(unique(CatchDisp[,3]))==1)
@@ -1007,34 +1130,69 @@ saveCurrResults<-function(input,output,session,baseSaveName){
   CatchOutRun1<-cbind(CatchOutRun1[,1:4],forecast.orig$fleet_assignment_to_allocation_group[CatchOutRun1[,4]],CatchOutRun1[,9:19])
   names(CatchOutRun1)<-c("Year","Season","Area","Fleet","Group","Retain(B)","Discard(B)","Retain(N)","Discard(N)","Retain(Basis)","HarvestRate(F)","SPR","SSB","Recruits","PopBiomass","F(Std)")
   CatchOutRun1<-CatchOutRun1[order(CatchOutRun1[,3],CatchOutRun1[,1],CatchOutRun1[,2],CatchOutRun1[,4]),]
-
+ 
+   if(input$ForecastTarget==6){
+    CatchOut1Cost<-CatchOut1[,1]
+    CatchOut1Benefit<-CatchOut1[,1]
+    CatchOutMSY1Cost<-CatchOut1[,1]
+    CatchOutMSY1Benefit<-CatchOut1[,1]
+    CatchOutRun1Cost<-CatchOut1[,1]
+    CatchOutRun1Benefit<-CatchOut1[,1]
+    
+    for(i in unique(CatchOut1[,4])){
+      CatchOut1Cost[which(CatchOut1[,4]==i)]<-vapply(CatchOut1[which(CatchOut1[,4]==i),11],get_Cost_Benefit,Val_series=CostMatrix[i,],Quant_Series=FSeq,FUN.VALUE = 1)
+      CatchOut1Benefit[which(CatchOut1[,4]==i)]<-vapply(CatchOut1[which(CatchOut1[,4]==i),6],get_Cost_Benefit,Val_series=BenefitMatrix[i,],Quant_Series=CatchSeq,FUN.VALUE = 1)
+      CatchOutMSY1Cost[which(CatchOut1[,4]==i)]<-vapply(CatchOutMSY1[which(CatchOut1[,4]==i),11],get_Cost_Benefit,Val_series=CostMatrix[i,],Quant_Series=FSeq,FUN.VALUE = 1)
+      CatchOutMSY1Benefit[which(CatchOut1[,4]==i)]<-vapply(CatchOutMSY1[which(CatchOut1[,4]==i),6],get_Cost_Benefit,Val_series=BenefitMatrix[i,],Quant_Series=CatchSeq,FUN.VALUE = 1)
+      CatchOutRun1Cost[which(CatchOut1[,4]==i)]<-vapply(CatchOutRun1[which(CatchOut1[,4]==i),11],get_Cost_Benefit,Val_series=CostMatrix[i,],Quant_Series=FSeq,FUN.VALUE = 1)
+      CatchOutRun1Benefit[which(CatchOut1[,4]==i)]<-vapply(CatchOutRun1[which(CatchOut1[,4]==i),6],get_Cost_Benefit,Val_series=BenefitMatrix[i,],Quant_Series=CatchSeq,FUN.VALUE = 1)
+    }
+    
+    CatchOut1<-cbind(CatchOut1[,1:16],CatchOut1[,14:16])
+    CatchOut1[,17]<-CatchOut1Cost
+    CatchOut1[,18]<-CatchOut1Benefit
+    CatchOut1[,19]<-CatchOut1Benefit-CatchOut1Cost
+    
+    CatchOutMSY1<-cbind(CatchOutMSY1[,1:16],CatchOutMSY1[,14:16])
+    CatchOutMSY1[,17]<-CatchOutMSY1Cost
+    CatchOutMSY1[,18]<-CatchOutMSY1Benefit
+    CatchOutMSY1[,19]<-CatchOutMSY1Benefit-CatchOutMSY1Cost
+    
+    CatchOutRun1<-cbind(CatchOutRun1[,1:16],CatchOutRun1[,14:16])
+    CatchOutRun1[,17]<-CatchOutRun1Cost
+    CatchOutRun1[,18]<-CatchOutRun1Benefit
+    CatchOutRun1[,19]<-CatchOutRun1Benefit-CatchOutRun1Cost
+    
+    names(CatchOut1)<-names(CatchOutMSY1)<-names(CatchOutRun1)<-c("Year","Season","Area","Fleet","Group","Retain(B)","Discard(B)","Retain(N)","Discard(N)","Retain(Basis)","HarvestRate(F)","SPR","SSB","Recruits","PopBiomass","F(Std)","Cost","Benefit","Profit")
+  }
+  
+  lcatch<-length(CatchOutRun1[1,])
   CatchOutDiffMB1<-CatchOutRun1
-  CatchOutDiffMB1[,6:16]<-(CatchOutMSY1[,6:16]-CatchOut1[,6:16])
-
+  CatchOutDiffMB1[,6:lcatch]<-(CatchOutMSY1[,6:lcatch]-CatchOut1[,6:lcatch])
+  
   CatchOutDiffRB1<-CatchOutRun1
-  CatchOutDiffRB1[,6:16]<-(CatchOutRun1[,6:16]-CatchOut1[,6:16])
-
+  CatchOutDiffRB1[,6:lcatch]<-(CatchOutRun1[,6:lcatch]-CatchOut1[,6:lcatch])
+  
   CatchOutDiffRM1<-CatchOutRun1
-  CatchOutDiffRM1[,6:16]<-(CatchOutRun1[,6:16]-CatchOutMSY1[,6:16])
-
+  CatchOutDiffRM1[,6:lcatch]<-(CatchOutRun1[,6:lcatch]-CatchOutMSY1[,6:lcatch])
+  
   CatchOutPercMB1<-CatchOutRun1
-  CatchOutPercMB1[,6:16]<-100*(CatchOutMSY1[,6:16]-CatchOut1[,6:16])/CatchOut1[,6:16]
-
+  CatchOutPercMB1[,6:lcatch]<-100*(CatchOutMSY1[,6:lcatch]-CatchOut1[,6:lcatch])/CatchOut1[,6:lcatch]
+  
   CatchOutPercRB1<-CatchOutRun1
-  CatchOutPercRB1[,6:16]<-100*(CatchOutRun1[,6:16]-CatchOut1[,6:16])/CatchOut1[,6:16]
-
+  CatchOutPercRB1[,6:lcatch]<-100*(CatchOutRun1[,6:lcatch]-CatchOut1[,6:lcatch])/CatchOut1[,6:lcatch]
+  
   CatchOutPercRM1<-CatchOutRun1
-  CatchOutPercRM1[,6:16]<-100*(CatchOutRun1[,6:16]-CatchOutMSY1[,6:16])/CatchOutMSY1[,6:16]
-
+  CatchOutPercRM1[,6:lcatch]<-100*(CatchOutRun1[,6:lcatch]-CatchOutMSY1[,6:lcatch])/CatchOutMSY1[,6:lcatch]
+  
   CatchOutPropMB1<-CatchOutRun1
-  CatchOutPropMB1[,6:16]<-CatchOutMSY1[,6:16]/CatchOut1[,6:16]
-
+  CatchOutPropMB1[,6:lcatch]<-CatchOutMSY1[,6:lcatch]/CatchOut1[,6:lcatch]
+  
   CatchOutPropRB1<-CatchOutRun1
-  CatchOutPropRB1[,6:16]<-CatchOutRun1[,6:16]/CatchOut1[,6:16]
-
+  CatchOutPropRB1[,6:lcatch]<-CatchOutRun1[,6:lcatch]/CatchOut1[,6:lcatch]
+  
   CatchOutPropRM1<-CatchOutRun1
-  CatchOutPropRM1[,6:16]<-CatchOutRun1[,6:16]/CatchOutMSY1[,6:16]
-
+  CatchOutPropRM1[,6:lcatch]<-CatchOutRun1[,6:lcatch]/CatchOutMSY1[,6:lcatch]
 
   CatchMSYKobe<-CatchOutMSY1
   KobeBMSY<-sum(CatchMSYKobe[CatchMSYKobe[,1]>=input$TargetYears[1] & CatchMSYKobe[,1]<=input$TargetYears[2],15])/(input$TargetYears[2]-input$TargetYears[1]+1)
@@ -1046,7 +1204,7 @@ saveCurrResults<-function(input,output,session,baseSaveName){
   CatchNewKobe[,3]<-CatchNewKobe[,3]/KobeBMSY
 
 
-  for(i in 6:16)
+  for(i in 6:lcatch)
   {
     CatchOutPercMB1[,i]<-ifelse(!is.finite(CatchOutPercMB1[,i]),0,CatchOutPercMB1[,i])
     CatchOutPercRB1[,i]<-ifelse(!is.finite(CatchOutPercRB1[,i]),0,CatchOutPercRB1[,i])
@@ -1145,6 +1303,23 @@ saveCurrResults<-function(input,output,session,baseSaveName){
           catMod<-"Harvest Rate"
           catMod2<-"Harvest Rate"
           dataColOut<-c(1:5,16)
+        }else if(input$displayRadioButtonOut5=="Economics")
+        {
+          unitMod<-"Dollars"
+          if(input$displayRadioButtonOut9=="Costs"){
+            catMod<-"Gross Costs"
+            catMod2<-"Gross Costs"
+            dataColOut<-c(1:5,17)
+          }else if(input$displayRadioButtonOut9=="Benefits"){
+            catMod<-"Gross Revenue"
+            catMod2<-"Gross Revenue"
+            dataColOut<-c(1:5,18)
+          }else if(input$displayRadioButtonOut9=="Profits"){
+            catMod<-"Net Profits"
+            catMod2<-"Net Profits"
+            dataColOut<-c(1:5,19)
+          }
+          
         }else if(input$displayRadioButtonOut5!="Landings" & input$displayRadioButtonOut5!="Dead Discards")
         {
           unitMod<-weightNames[disp.Desc$Units[1]]
@@ -1288,7 +1463,12 @@ saveCurrResults<-function(input,output,session,baseSaveName){
         if(makePlot==TRUE)
         {
 
-          potNamesCatch<-c("Year","Season","Area","Fleet","Group","Retain(B)","Discard(B)","Retain(N)","Discard(N)","Retain(Basis)","HarvestRate(F)","SPR","SSB","Recruits","PopBiomass","HarvestRate(F)")
+          if(input$ForecastTarget==6){
+            potNamesCatch<-c("Year","Season","Area","Fleet","Group","Retain(B)","Discard(B)","Retain(N)","Discard(N)","Retain(Basis)","HarvestRate(F)","SPR","SSB","Recruits","PopBiomass","HarvestRate(F)","Cost","Benefit","Profit")
+          }else{
+            potNamesCatch<-c("Year","Season","Area","Fleet","Group","Retain(B)","Discard(B)","Retain(N)","Discard(N)","Retain(Basis)","HarvestRate(F)","SPR","SSB","Recruits","PopBiomass","HarvestRate(F)")
+          }
+          
           CatchSave1<-CatchDisp
           names(CatchSave1)<-potNamesCatch
           CatchDisp<-CatchDisp[,dataColOut]
