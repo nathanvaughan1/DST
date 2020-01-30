@@ -475,6 +475,12 @@ buildObservers<-function(input, output, session, observers=0){
             updateRadioButtons(session = session, inputId = "displayRadioButtonOut",selected="Total",inline=TRUE)
             showElement("displayRadioButtonOut6")
             hideElement("displayRadioButtonOut")
+          }else if(input$displayRadioButtonOut5=="Economics"){
+            showElement("TimeSeriesInputs")
+            hideElement("KobePlotInputs")
+            #updateRadioButtons(session = session, inputId = "displayRadioButtonOut",selected="Total",inline=TRUE)
+            showElement("displayRadioButtonOut6")
+            showElement("displayRadioButtonOut")
           }else{
             showElement("TimeSeriesInputs")
             hideElement("KobePlotInputs")
