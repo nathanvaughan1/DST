@@ -1219,6 +1219,476 @@ RunTargetForecast<-function(input, output, session){
           keep.searching<-FALSE
         }
       }
+    }else if(input$ForecastTarget==6){
+      
+      get_Cost_Benefit<-function(Val_series=NULL,Quant_Series=NULL,Point_value=NULL){
+        lower_1<-Quant_Series[Quant_Series<=Point_value]
+        lower_1<-lower_1[length(lower_1)]
+        upper_1<-Quant_Series[Quant_Series>=Point_value]
+        upper_1<-upper_1[1]
+        lower_2<-Val_series[Quant_Series<=Point_value]
+        lower_2<-lower_2[length(lower_2)]
+        upper_2<-Val_series[Quant_Series>=Point_value]
+        upper_2<-upper_2[1]
+        
+        if(upper_1==lower_1){
+          Val<-Point_value*((upper_2+lower_2)/2)
+        }else{
+          Val<-Point_value*(lower_2+((Point_value-lower_1)/(upper_1-lower_1))*(upper_2-lower_2))
+        }
+        return(Val)
+      }
+      #browser()
+      temp_str<-as.numeric(strsplit(input$CostBenefits,split="[,\n \t]+")[[1]])
+      temp_str<-temp_str[!is.na(temp_str)]
+      temp_str<-temp_str[temp_str!=""]
+      ProfitMatrix_temp<-matrix(temp_str,ncol=4,byrow=TRUE)
+      #ProfitMatrix_temp<-matrix(as.numeric(strsplit(input$CostBenefits,split="[,\n ]+")[[1]]),ncol=4,byrow=TRUE)
+      ProfitMatrix_temp<-ProfitMatrix_temp[order(ProfitMatrix_temp[,1],ProfitMatrix_temp[,2],ProfitMatrix_temp[,3]),]
+      nCatches<-length(unique(ProfitMatrix_temp[ProfitMatrix_temp[,2]==1,3]))
+      CatchSeq<-c(0,sort(unique(ProfitMatrix_temp[ProfitMatrix_temp[,2]==1,3])),Inf)
+      nFs<-length(unique(ProfitMatrix_temp[ProfitMatrix_temp[,2]==2,3]))
+      FSeq<-c(0,sort(unique(ProfitMatrix_temp[ProfitMatrix_temp[,2]==2,3])),Inf)
+      nFls<-length(unique(ProfitMatrix_temp[,1]))
+      FleetSeq<-sort(unique(ProfitMatrix_temp[,1]))
+      CostMatrix<-matrix(NA,nrow=nFls,ncol=(nFs+2))
+      BenefitMatrix<-matrix(NA,nrow=nFls,ncol=(nCatches+2))
+      for(i in 1:nFls){
+        CostMatrix[i,2:(nFs+1)]<-ProfitMatrix_temp[ProfitMatrix_temp[,1]==i & ProfitMatrix_temp[,2]==2,4]
+        BenefitMatrix[i,2:(nCatches+1)]<-ProfitMatrix_temp[ProfitMatrix_temp[,1]==i & ProfitMatrix_temp[,2]==1,4]
+        CostMatrix[i,1]<-CostMatrix[i,2]
+        CostMatrix[i,(nFs+2)]<-CostMatrix[i,(nFs+1)]
+        BenefitMatrix[i,1]<-BenefitMatrix[i,2]
+        BenefitMatrix[i,(nCatches+2)]<-BenefitMatrix[i,(nCatches+1)]
+      }
+      incProgress(0.1, detail = paste0("Finding MEY")) #0.4 total
+      #print("MSY == 2, start search")
+      statusMatrix<-matrix(NA,nrow=11,ncol=30,dimnames = list(c("target SPR","input SPR","achieved SPR","achieved Catch","achieved F","achieved cost","achieved benefit","achieved profit","last Catch","min Catch","max Catch")))
+      
+      statusMatrix[,1]<-c(0,0,0,0,0,0,0,0,0,0,0)
+      statusMatrix[,2]<-c(1,1,1,0,0,0,0,0,0,0,0)
+      TargetVals<-c(0.2,0.3,0.5)
+      TargetVal<-1
+      step<-3
+      statusMatrix[1,step]<-TargetVals[TargetVal]
+      statusMatrix[2,step]<-TargetVals[TargetVal]
+      forecast.run$MSY<<-1
+      forecast.run$Forecast<<-1
+      forecast.run$SPRtarget<<-as.numeric(statusMatrix[2,step])
+      wrt_forecast(forecast.run,dir=dir.run,overwrite = TRUE)
+      incProgress(0.05, detail = paste0("Finding MEY - search loop ",step," of probably 10-15 (max 30)- finding Target ",TargetVal," of 3. Running SS3")) #0.4 total
+      
+      findingTargets<-TRUE
+      while(findingTargets){
+        
+        shell(paste("cd /d ",dir.run," && ss3 -nohess",sep=""))
+        #print("SS ran successfully 1 :)")
+        incProgress(0.00, detail = paste0("Finding MEY - search loop ",step," of probably 10-15 (max 30)- finding Target ",TargetVal," of 3. Reading output file")) #0.4 total
+        
+        output.read<-FALSE
+        output.temp<-NULL
+        while(output.read==FALSE){
+          try({output.temp<-rd_output(dir.run, covar=F, ncol=numCols)})
+          if(is.null(output.temp)){
+            output.read<-FALSE
+            numCols<<-numCols+100
+          }else{
+            output.read<-TRUE
+            output.run<<-output.temp
+          }
+        }
+        
+        #print("Output read successfully 1")
+        incProgress(0.00, detail = paste0("Finding MEY - search loop ",step," of probably 10-15 (max 30)- finding Target ",TargetVal," of 3. Reading catch results")) #0.4 total
+        
+        
+        
+        statusMatrix[3,step]<-mean(output.run$sprseries$SPR[output.run$sprseries$Year>=input$TargetYears[1] & output.run$sprseries$Year<=input$TargetYears[2]])
+        Catch<-ReadCatch(output.run,input$TargetYears[1]:input$TargetYears[2])
+        Catch<-Catch[Catch[,1]>=input$TargetYears[1] & Catch[,1]<=input$TargetYears[2],]
+        statusMatrix[4,step]<-sum(Catch[,5])/length(unique(Catch[,1]))
+        
+        temp_Cost_sum<-0
+        temp_Benefit_sum<-0
+        for(i in 1:nFls){
+          temp_Fleet_Catch<-Catch[Catch[,4]==(i+nFls),,drop=FALSE]
+          for(j in 1:length(temp_Fleet_Catch[,1])){
+            temp_Cost_sum<-temp_Cost_sum+get_Cost_Benefit(CostMatrix[i,],FSeq,temp_Fleet_Catch[j,10])
+            temp_Benefit_sum<-temp_Benefit_sum+get_Cost_Benefit(BenefitMatrix[i,],CatchSeq,temp_Fleet_Catch[j,5])
+          }
+        }
+        
+        statusMatrix[5,step]<-sum(Catch[,10])/length(unique(Catch[,1]))
+        
+        statusMatrix[6,step]<-temp_Cost_sum/length(unique(Catch[,1]))
+        statusMatrix[7,step]<-temp_Benefit_sum/length(unique(Catch[,1]))
+        statusMatrix[8,step]<-(temp_Benefit_sum-temp_Cost_sum)/length(unique(Catch[,1]))
+        
+        if(statusMatrix[3,step]<=0.01){statusMatrix[3,step]<=0.01}
+        #print(paste("management year = ",(input$ManagementYearInput+1)))
+        #print(paste("target year = ",(input$TargetYears[1]-1)))
+        CatchAll<-ReadCatch(output.run,(input$ManagementYearInput+1):(input$TargetYears[1]-1))
+        #print("Catch All = ")
+        #print(CatchAll)
+        
+        CatchAllAnnual<-aggregate(CatchAll[,5:6],list(CatchAll[,1]),sum,na.rm=TRUE)
+        #print("Catch All Annual= ")
+        #print(CatchAllAnnual)
+        statusMatrix[9,step]<-CatchAllAnnual[1,2]
+        print("Status matrix = ")
+        print(statusMatrix)
+        if(length(min(CatchAllAnnual[,2],na.rm=TRUE))==0){
+          statusMatrix[3,step]<-0
+          statusMatrix[5,step]<-0
+          statusMatrix[6,step]<-0
+          statusMatrix[7,step]<-0
+          statusMatrix[8,step]<-0
+          statusMatrix[9,step]<-0
+          statusMatrix[10,step]<-0
+          statusMatrix[4,step]<-0
+        }else if(min(CatchAllAnnual[,2],na.rm=TRUE)==Inf){
+          statusMatrix[3,step]<-0
+          statusMatrix[5,step]<-0
+          statusMatrix[6,step]<-0
+          statusMatrix[7,step]<-0
+          statusMatrix[8,step]<-0
+          statusMatrix[9,step]<-0
+          statusMatrix[10,step]<-0
+          statusMatrix[4,step]<-0
+        }else if(min(CatchAllAnnual[,2],na.rm=TRUE)<=0){
+          statusMatrix[3,step]<-0
+          statusMatrix[5,step]<-0
+          statusMatrix[6,step]<-0
+          statusMatrix[7,step]<-0
+          statusMatrix[8,step]<-0
+          statusMatrix[9,step]<-0
+          statusMatrix[10,step]<-0
+          statusMatrix[4,step]<-0
+        }else{
+          statusMatrix[10,step]<-min(CatchAllAnnual[,2])
+        }
+        
+        if(length(max(CatchAllAnnual[,2],na.rm=TRUE))==0){
+          statusMatrix[3,step]<-0
+          statusMatrix[5,step]<-0
+          statusMatrix[6,step]<-0
+          statusMatrix[7,step]<-0
+          statusMatrix[8,step]<-0
+          statusMatrix[9,step]<-0
+          statusMatrix[11,step]<-0
+          statusMatrix[4,step]<-0
+        }else if(max(CatchAllAnnual[,2],na.rm=TRUE)==Inf){
+          statusMatrix[3,step]<-0
+          statusMatrix[5,step]<-0
+          statusMatrix[6,step]<-0
+          statusMatrix[7,step]<-0
+          statusMatrix[8,step]<-0
+          statusMatrix[9,step]<-0
+          statusMatrix[11,step]<-0
+          statusMatrix[4,step]<-0
+        }else if(max(CatchAllAnnual[,2],na.rm=TRUE)<=0){
+          statusMatrix[3,step]<-0
+          statusMatrix[5,step]<-0
+          statusMatrix[6,step]<-0
+          statusMatrix[7,step]<-0
+          statusMatrix[8,step]<-0
+          statusMatrix[9,step]<-0
+          statusMatrix[11,step]<-0
+          statusMatrix[4,step]<-0
+        }else{
+          statusMatrix[11,step]<-max(CatchAllAnnual[,2])
+        }
+        
+        if(statusMatrix[3,step]<=0.01)
+        {
+          statusMatrix[3,step]<-0
+          statusMatrix[4,step]<-0
+          statusMatrix[5,step]<-0
+          statusMatrix[6,step]<-0
+          statusMatrix[7,step]<-0
+          statusMatrix[8,step]<-0
+          statusMatrix[9,step]<-0
+          statusMatrix[10,step]<-0
+          statusMatrix[11,step]<-0
+        }
+        
+        # if(statusMatrix[6,step]<0.9*min(c(statusMatrix[4,step],statusMatrix[5,step]),na.rm=TRUE)){
+        #
+        #   statusMatrix[4,step]<-0
+        # }
+        # if(statusMatrix[7,step]>1.1*max(c(statusMatrix[4,step],statusMatrix[5,step]),na.rm=TRUE)){
+        #   statusMatrix[4,step]<-0
+        # }
+        
+        if(abs(statusMatrix[1,step]-statusMatrix[3,step])>0.2 && step<=(10+5*TargetVal))
+        {
+          statusMatrix[1,(step+1)]<-statusMatrix[1,step]
+          if(statusMatrix[1,step]>statusMatrix[3,step]){
+            statusMatrix[2,(step+1)]<-statusMatrix[2,step]+min((statusMatrix[1,step]-statusMatrix[3,step]),(0.75*(1-statusMatrix[2,step])*(statusMatrix[1,step]-statusMatrix[3,step])/statusMatrix[2,step]))
+          }else{
+            statusMatrix[2,(step+1)]<-statusMatrix[2,step]+max((statusMatrix[1,step]-statusMatrix[3,step]),-0.75*(statusMatrix[2,step]))
+          }
+          step<-step+1
+          print("Status matrix = ")
+          print(statusMatrix)
+          forecast.run$SPRtarget<<-as.numeric(statusMatrix[2,step])
+          wrt_forecast(forecast.run,dir=dir.run,overwrite = TRUE)
+        }else{
+          if(TargetVal<3){
+            TargetVal<-TargetVal+1
+            statusMatrix[1,(step+1)]<-TargetVals[TargetVal]
+            statusMatrix[2,(step+1)]<-statusMatrix[2,step]+(TargetVals[TargetVal]-TargetVals[(TargetVal-1)])*(1-statusMatrix[2,step])
+            step<-step+1
+            print("Status matrix = ")
+            print(statusMatrix)
+            forecast.run$SPRtarget<<-as.numeric(statusMatrix[2,step])
+            wrt_forecast(forecast.run,dir=dir.run,overwrite = TRUE)
+          }else{
+            step<-step+1
+            findingTargets<-FALSE
+          }
+        }
+      }
+      
+      findingMSY<-TRUE
+      stepSize<-1
+      newGuess1<-matrix(NA,nrow=0,ncol=5)
+      newGuess2<-matrix(NA,nrow=0,ncol=5)
+      lowMSY<-matrix(c(0,0,0,0),nrow=4,ncol=1)
+      highMSY<-matrix(c(0,0,0,0),nrow=4,ncol=1)
+      while(findingMSY==TRUE)
+      {
+        incProgress(0.00, detail = paste0("Finding MEY - search loop ",step," of probably 10-15 (max 30)- finding MEY. Calculating next search estimate")) #0.4 total
+        
+        BestGuesses<-statusMatrix[,order(statusMatrix[8,],statusMatrix[3,],statusMatrix[2,],decreasing = TRUE)]
+        
+        bestMSY<-BestGuesses[,1,drop=FALSE]
+        
+        lowMSY<-BestGuesses[,BestGuesses[2,]<bestMSY[2,1],drop=FALSE]
+        lowMSY<-lowMSY[,lowMSY[3,]<=bestMSY[3,1],drop=FALSE]
+        lowMSY<-lowMSY[,!is.na(lowMSY[3,]),drop=FALSE]
+        lowMSY<-lowMSY[,lowMSY[3,]==max(lowMSY[3,]),drop=FALSE]
+        lowMSY<-lowMSY[,1,drop=FALSE]
+        
+        highMSY<-BestGuesses[,BestGuesses[2,]>bestMSY[2,],drop=FALSE]
+        highMSY<-highMSY[,highMSY[3,]>=bestMSY[3,],drop=FALSE]
+        highMSY<-highMSY[,!is.na(highMSY[3,]),drop=FALSE]
+        highMSY<-highMSY[,highMSY[3,]==min(highMSY[3,]),drop=FALSE]
+        highMSY<-highMSY[,1,drop=FALSE]
+        
+        newGuess1<-rbind(FitParabola(c(bestMSY[2,1],lowMSY[2,1],highMSY[2,1]),c(bestMSY[8,1],lowMSY[8,1],highMSY[8,1])),newGuess1)
+        newGuess2<-rbind(FitParabola(c(bestMSY[3,1],lowMSY[3,1],highMSY[3,1]),c(bestMSY[8,1],lowMSY[8,1],highMSY[8,1])),newGuess2)
+        
+        statusMatrix[1,step]<-0.8*newGuess2[1,4]+0.1*lowMSY[3,1]+0.1*highMSY[3,1]
+        statusMatrix[2,step]<-0.8*newGuess1[1,4]+0.1*lowMSY[2,1]+0.1*highMSY[2,1]
+        
+        print(paste("best mey = ",bestMSY))
+        print(paste("low mey = ",lowMSY))
+        print(paste("high mey = ",highMSY))
+        print(paste("new guess 1 = ",newGuess1))
+        print(paste("new guess 2 = ",newGuess2))
+        
+        print("Status matrix = ")
+        print(statusMatrix)
+        #statusMatrix[1,(6+Search.Iters)]<-(bestMSY[3,1]*(bestMSY[4,1])+highMSY[3,1]*(highMSY[4,1]+stepSize*bestMSY[4,1])/(1+stepSize)+lowMSY[3,1]*(lowMSY[4,1]+stepSize*bestMSY[4,1])/(1+stepSize))/(bestMSY[4,1]+(highMSY[4,1]+stepSize*bestMSY[4,1])/(1+stepSize)+(lowMSY[4,1]+stepSize*bestMSY[4,1])/(1+stepSize))
+        #statusMatrix[2,(6+Search.Iters)]<-(bestMSY[2,1]*(bestMSY[4,1])+highMSY[2,1]*(highMSY[4,1]+stepSize*bestMSY[4,1])/(1+stepSize)+lowMSY[2,1]*(lowMSY[4,1]+stepSize*bestMSY[4,1])/(1+stepSize))/(bestMSY[4,1]+(highMSY[4,1]+stepSize*bestMSY[4,1])/(1+stepSize)+(lowMSY[4,1]+stepSize*bestMSY[4,1])/(1+stepSize))
+        
+        
+        #if((highMSY[3,1]-bestMSY[3,1])>(bestMSY[3,1]-lowMSY[3,1])){
+        # }else{
+        #   statusMatrix[1,(6+Search.Iters)]<-(bestMSY[3,1]*(bestMSY[4,1]+stepSize*lowMSY[4,1])+lowMSY[3,1]*(lowMSY[4,1]+stepSize*bestMSY[4,1]))/((bestMSY[4,1]+stepSize*lowMSY[4,1])+(lowMSY[4,1]+stepSize*bestMSY[4,1]))
+        #   statusMatrix[2,(6+Search.Iters)]<-(bestMSY[2,1]*(bestMSY[4,1]+stepSize*lowMSY[4,1])+lowMSY[2,1]*(lowMSY[4,1]+stepSize*bestMSY[4,1]))/((bestMSY[4,1]+stepSize*lowMSY[4,1])+(lowMSY[4,1]+stepSize*bestMSY[4,1]))
+        # }
+        #statusMatrix[1,(4+Search.Iters)]<-BestGuesses[3,1]+stepSize*((BestGuesses[4,1]-BestGuesses[4,2])*(BestGuesses[3,1]-BestGuesses[3,2])+(BestGuesses[4,1]-BestGuesses[4,3])*(BestGuesses[3,1]-BestGuesses[3,3]))/((BestGuesses[4,1]-BestGuesses[4,2])+(BestGuesses[4,1]-BestGuesses[4,3]))
+        #statusMatrix[2,(4+Search.Iters)]<-BestGuesses[2,1]+stepSize*((BestGuesses[4,1]-BestGuesses[4,2])*(BestGuesses[2,1]-BestGuesses[2,2])+(BestGuesses[4,1]-BestGuesses[4,3])*(BestGuesses[2,1]-BestGuesses[2,3]))/((BestGuesses[4,1]-BestGuesses[4,2])+(BestGuesses[4,1]-BestGuesses[4,3]))
+        
+        forecast.run$SPRtarget<<-as.numeric(statusMatrix[2,step])
+        wrt_forecast(forecast.run,dir=dir.run,overwrite = TRUE)
+        
+        #print(statusMatrix)
+        
+        incProgress(0.05, detail = paste0("Finding MEY - search loop ",step," of probably 10-15 (max 30)- finding MEY. Running SS3. Best estim so far MEY = ",bestMSY[8,1]," (",lowMSY[8,1],",",highMSY[8,1],") at SPR = ",bestMSY[3,1],"(",lowMSY[3,1],",",highMSY[3,1],")")) #0.4 total
+        
+        shell(paste("cd /d ",dir.run," && ss3 -nohess",sep=""))#
+        #print(paste0("SS ran successfully :) ",Search.Iters))
+        incProgress(0.00, detail = paste0("Finding MEY - search loop ",step," of probably 10-15 (max 30)- finding MEY. Reading output file. Best estim so far MEY = ",bestMSY[8,1]," (",lowMSY[8,1],",",highMSY[8,1],") at SPR = ",bestMSY[3,1],"(",lowMSY[3,1],",",highMSY[3,1],")")) #0.4 total
+        
+        output.read<-FALSE
+        output.temp<-NULL
+        while(output.read==FALSE){
+          try({output.temp<-rd_output(dir.run, covar=F, ncol=numCols)})
+          if(is.null(output.temp)){
+            output.read<-FALSE
+            numCols<<-numCols+100
+          }else{
+            output.read<-TRUE
+            output.run<<-output.temp
+          }
+        }
+        incProgress(0.00, detail = paste0("Finding MEY - search loop ",step," of probably 10-15 (max 30)- finding MEY. Reading catch data. Best estim so far MEY = ",bestMSY[8,1]," (",lowMSY[8,1],",",highMSY[8,1],") at SPR = ",bestMSY[3,1],"(",lowMSY[3,1],",",highMSY[3,1],")")) #0.4 total
+        
+        #print(paste0("Output read successfully ",Search.Iters))
+        statusMatrix[3,step]<-sum(output.run$sprseries$SPR[output.run$sprseries$Year>=input$TargetYears[1] & output.run$sprseries$Year<=input$TargetYears[2]])/length(output.run$sprseries$SPR[output.run$sprseries$Year>=input$TargetYears[1] & output.run$sprseries$Year<=input$TargetYears[2]])
+        Catch<-ReadCatch(output.run,input$TargetYears[1]:input$TargetYears[2])
+        Catch<-Catch[Catch[,1]>=input$TargetYears[1] & Catch[,1]<=input$TargetYears[2],]
+        statusMatrix[4,step]<-sum(Catch[,5])/length(unique(Catch[,1]))
+        
+        temp_Cost_sum<-0
+        temp_Benefit_sum<-0
+        for(i in 1:nFls){
+          temp_Fleet_Catch<-Catch[Catch[,4]==(i+nFls),,drop=FALSE]
+          for(j in 1:length(temp_Fleet_Catch[,1])){
+            temp_Cost_sum<-temp_Cost_sum+get_Cost_Benefit(CostMatrix[i,],FSeq,temp_Fleet_Catch[j,10])
+            temp_Benefit_sum<-temp_Benefit_sum+get_Cost_Benefit(BenefitMatrix[i,],CatchSeq,temp_Fleet_Catch[j,5])
+          }
+        }
+        
+        statusMatrix[5,step]<-sum(Catch[,10])/length(unique(Catch[,1]))
+        
+        statusMatrix[6,step]<-temp_Cost_sum/length(unique(Catch[,1]))
+        statusMatrix[7,step]<-temp_Benefit_sum/length(unique(Catch[,1]))
+        statusMatrix[8,step]<-(temp_Benefit_sum-temp_Cost_sum)/length(unique(Catch[,1]))
+        
+        CatchAll<-ReadCatch(output.run,(input$ManagementYearInput+1):(input$TargetYears[1]-1))
+        CatchAllAnnual<-aggregate(CatchAll[,5:6],list(CatchAll[,1]),sum,na.rm=TRUE)
+        
+        statusMatrix[9,step]<-CatchAllAnnual[1,2]
+        print("Status matrix = ")
+        print(statusMatrix)
+        if(length(min(CatchAllAnnual[,2],na.rm=TRUE))==0){
+          statusMatrix[3,step]<-0
+          statusMatrix[5,step]<-0
+          statusMatrix[6,step]<-0
+          statusMatrix[7,step]<-0
+          statusMatrix[8,step]<-0
+          statusMatrix[9,step]<-0
+          statusMatrix[10,step]<-0
+          statusMatrix[4,step]<-0
+        }else if(min(CatchAllAnnual[,2],na.rm=TRUE)==Inf){
+          statusMatrix[3,step]<-0
+          statusMatrix[5,step]<-0
+          statusMatrix[6,step]<-0
+          statusMatrix[7,step]<-0
+          statusMatrix[8,step]<-0
+          statusMatrix[9,step]<-0
+          statusMatrix[10,step]<-0
+          statusMatrix[4,step]<-0
+        }else if(min(CatchAllAnnual[,2],na.rm=TRUE)<=0){
+          statusMatrix[3,step]<-0
+          statusMatrix[5,step]<-0
+          statusMatrix[6,step]<-0
+          statusMatrix[7,step]<-0
+          statusMatrix[8,step]<-0
+          statusMatrix[9,step]<-0
+          statusMatrix[10,step]<-0
+          statusMatrix[4,step]<-0
+        }else{
+          statusMatrix[10,step]<-min(CatchAllAnnual[,2])
+        }
+        
+        if(length(max(CatchAllAnnual[,2],na.rm=TRUE))==0){
+          statusMatrix[3,step]<-0
+          statusMatrix[5,step]<-0
+          statusMatrix[6,step]<-0
+          statusMatrix[7,step]<-0
+          statusMatrix[8,step]<-0
+          statusMatrix[9,step]<-0
+          statusMatrix[11,step]<-0
+          statusMatrix[4,step]<-0
+        }else if(max(CatchAllAnnual[,2],na.rm=TRUE)==Inf){
+          statusMatrix[3,step]<-0
+          statusMatrix[5,step]<-0
+          statusMatrix[6,step]<-0
+          statusMatrix[7,step]<-0
+          statusMatrix[8,step]<-0
+          statusMatrix[9,step]<-0
+          statusMatrix[11,step]<-0
+          statusMatrix[4,step]<-0
+        }else if(max(CatchAllAnnual[,2],na.rm=TRUE)<=0){
+          statusMatrix[3,step]<-0
+          statusMatrix[5,step]<-0
+          statusMatrix[6,step]<-0
+          statusMatrix[7,step]<-0
+          statusMatrix[8,step]<-0
+          statusMatrix[9,step]<-0
+          statusMatrix[11,step]<-0
+          statusMatrix[4,step]<-0
+        }else{
+          statusMatrix[11,step]<-max(CatchAllAnnual[,2])
+        }
+        
+        if(statusMatrix[3,step]<=0.01)
+        {
+          statusMatrix[3,step]<-0
+          statusMatrix[4,step]<-0
+          statusMatrix[5,step]<-0
+          statusMatrix[6,step]<-0
+          statusMatrix[7,step]<-0
+          statusMatrix[8,step]<-0
+          statusMatrix[9,step]<-0
+          statusMatrix[10,step]<-0
+          statusMatrix[11,step]<-0
+        }
+        
+        
+        # if(statusMatrix[6,step]<0.9*min(c(statusMatrix[4,step],statusMatrix[5,step]),na.rm=TRUE)){
+        #   statusMatrix[4,step]<-0
+        # }
+        # if(statusMatrix[7,step]>1.1*max(c(statusMatrix[4,step],statusMatrix[5,step]),na.rm=TRUE)){
+        #   statusMatrix[4,step]<-0
+        # }
+        
+        if(statusMatrix[8,step]>BestGuesses[8,1]){
+          
+        }else{
+          stepSize<-0.5*stepSize
+        }
+        step<-step+1
+        print("Status matrix = ")
+        print(statusMatrix)
+        if(((highMSY[3,1]-lowMSY[3,1])<0.001)||(stepSize<0.001)||(step>30)){
+          findingMSY<-FALSE
+          outputName1<-"MEYSearch"
+          outputName2<-"ParabolaGuesses1"
+          outputName3<-"ParabolaGuesses2"
+          dir.outputs<<-paste0(dir.base,"/outputs")
+          if(!dir.exists(dir.outputs))
+          {
+            dir.create(dir.outputs)
+          }else{
+            files.outputs<-list.files(dir.outputs)
+            if(length(grep(paste0("MEYSearch"),files.outputs))!=0){
+              repNum<-1
+              outputName1<-paste0("MEYSearch(",repNum,")")
+              while(length(grep(paste0(outputName1),files.outputs,fixed=TRUE))!=0){
+                repNum<-repNum+1
+                outputName1<-paste0("MEYSearch(",repNum,")")
+              }
+            }
+            
+            if(length(grep(paste0("ParabolaGuesses1"),files.outputs))!=0){
+              repNum<-1
+              outputName2<-paste0("ParabolaGuesses1(",repNum,")")
+              while(length(grep(paste0(outputName2),files.outputs,fixed=TRUE))!=0){
+                repNum<-repNum+1
+                outputName2<-paste0("ParabolaGuesses1(",repNum,")")
+              }
+            }
+            
+            if(length(grep(paste0("ParabolaGuesses2"),files.outputs))!=0){
+              repNum<-1
+              outputName3<-paste0("ParabolaGuesses2(",repNum,")")
+              while(length(grep(paste0(outputName3),files.outputs,fixed=TRUE))!=0){
+                repNum<-repNum+1
+                outputName3<-paste0("ParabolaGuesses2(",repNum,")")
+              }
+            }
+          }
+          write.csv(statusMatrix,file=paste0(dir.outputs,"/",outputName1,".csv"),row.names = FALSE)
+          write.csv(newGuess1,file=paste0(dir.outputs,"/",outputName2,".csv"),row.names = FALSE)
+          write.csv(newGuess2,file=paste0(dir.outputs,"/",outputName3,".csv"),row.names = FALSE)
+        }
+      }
     }else if(input$ForecastTarget==2){
 
       incProgress(0.1, detail = paste0("Finding MSY")) #0.4 total

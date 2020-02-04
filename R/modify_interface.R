@@ -475,6 +475,12 @@ buildObservers<-function(input, output, session, observers=0){
             updateRadioButtons(session = session, inputId = "displayRadioButtonOut",selected="Total",inline=TRUE)
             showElement("displayRadioButtonOut6")
             hideElement("displayRadioButtonOut")
+          }else if(input$displayRadioButtonOut5=="Economics"){
+            showElement("TimeSeriesInputs")
+            hideElement("KobePlotInputs")
+            #updateRadioButtons(session = session, inputId = "displayRadioButtonOut",selected="Total",inline=TRUE)
+            showElement("displayRadioButtonOut6")
+            showElement("displayRadioButtonOut")
           }else{
             showElement("TimeSeriesInputs")
             hideElement("KobePlotInputs")
@@ -533,23 +539,33 @@ buildObservers<-function(input, output, session, observers=0){
           })
           if(as.numeric(input$ForecastTarget)==2){
             isolate({
+              hideElement(id="CostBenefits")
               hideElement(id="TargetValue")
               showElement(id="TargetYears")
               showElement(id="ForecastApplied")
               })
           }else if(as.numeric(input$ForecastTarget)==4){
             isolate({
+              hideElement(id="CostBenefits")
               hideElement(id="TargetValue")
               hideElement(id="TargetYears")
               showElement(id="ForecastApplied")})
+          }else if(as.numeric(input$ForecastTarget)==6){
+            isolate({
+              showElement(id="CostBenefits")
+              hideElement(id="TargetValue")
+              showElement(id="TargetYears")
+              hideElement(id="ForecastApplied")})
           }else if(as.numeric(input$ForecastTarget)==5){
             isolate({
+              hideElement(id="CostBenefits")
               hideElement(id="TargetValue")
               hideElement(id="TargetYears")
               hideElement(id="ForecastApplied")
               })
           }else{
             isolate({
+              hideElement(id="CostBenefits")
               showElement(id="TargetValue")
               showElement(id="TargetYears")
               showElement(id="ForecastApplied")})
