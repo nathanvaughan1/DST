@@ -1222,6 +1222,7 @@ RunTargetForecast<-function(input, output, session){
     }else if(input$ForecastTarget==6){
       
       get_Cost_Benefit<-function(Val_series=NULL,Quant_Series=NULL,Point_value=NULL){
+        #browser()
         lower_1<-Quant_Series[Quant_Series<=Point_value]
         lower_1<-lower_1[length(lower_1)]
         upper_1<-Quant_Series[Quant_Series>=Point_value]
@@ -1312,9 +1313,15 @@ RunTargetForecast<-function(input, output, session){
         temp_Benefit_sum<-0
         for(i in 1:nFls){
           temp_Fleet_Catch<-Catch[Catch[,4]==(i+nFls),,drop=FALSE]
+          if(output.run$catch_units[i]==1){
+            catch_Col_temp<-5
+          }else{
+            catch_Col_temp<-7
+          }
           for(j in 1:length(temp_Fleet_Catch[,1])){
             temp_Cost_sum<-temp_Cost_sum+get_Cost_Benefit(CostMatrix[i,],FSeq,temp_Fleet_Catch[j,10])
-            temp_Benefit_sum<-temp_Benefit_sum+get_Cost_Benefit(BenefitMatrix[i,],CatchSeq,temp_Fleet_Catch[j,9])
+            
+            temp_Benefit_sum<-temp_Benefit_sum+get_Cost_Benefit(BenefitMatrix[i,],CatchSeq,temp_Fleet_Catch[j,catch_Col_temp])
           }
         }
         
@@ -1537,9 +1544,14 @@ RunTargetForecast<-function(input, output, session){
         temp_Benefit_sum<-0
         for(i in 1:nFls){
           temp_Fleet_Catch<-Catch[Catch[,4]==(i+nFls),,drop=FALSE]
+          if(output.run$catch_units[i]==1){
+            catch_Col_temp<-5
+          }else{
+            catch_Col_temp<-7
+          }
           for(j in 1:length(temp_Fleet_Catch[,1])){
             temp_Cost_sum<-temp_Cost_sum+get_Cost_Benefit(CostMatrix[i,],FSeq,temp_Fleet_Catch[j,10])
-            temp_Benefit_sum<-temp_Benefit_sum+get_Cost_Benefit(BenefitMatrix[i,],CatchSeq,temp_Fleet_Catch[j,9])
+            temp_Benefit_sum<-temp_Benefit_sum+get_Cost_Benefit(BenefitMatrix[i,],CatchSeq,temp_Fleet_Catch[j,catch_Col_temp])
           }
         }
         
