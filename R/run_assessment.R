@@ -1314,7 +1314,7 @@ RunTargetForecast<-function(input, output, session){
           temp_Fleet_Catch<-Catch[Catch[,4]==(i+nFls),,drop=FALSE]
           for(j in 1:length(temp_Fleet_Catch[,1])){
             temp_Cost_sum<-temp_Cost_sum+get_Cost_Benefit(CostMatrix[i,],FSeq,temp_Fleet_Catch[j,10])
-            temp_Benefit_sum<-temp_Benefit_sum+get_Cost_Benefit(BenefitMatrix[i,],CatchSeq,temp_Fleet_Catch[j,5])
+            temp_Benefit_sum<-temp_Benefit_sum+get_Cost_Benefit(BenefitMatrix[i,],CatchSeq,temp_Fleet_Catch[j,9])
           }
         }
         
@@ -1539,7 +1539,7 @@ RunTargetForecast<-function(input, output, session){
           temp_Fleet_Catch<-Catch[Catch[,4]==(i+nFls),,drop=FALSE]
           for(j in 1:length(temp_Fleet_Catch[,1])){
             temp_Cost_sum<-temp_Cost_sum+get_Cost_Benefit(CostMatrix[i,],FSeq,temp_Fleet_Catch[j,10])
-            temp_Benefit_sum<-temp_Benefit_sum+get_Cost_Benefit(BenefitMatrix[i,],CatchSeq,temp_Fleet_Catch[j,5])
+            temp_Benefit_sum<-temp_Benefit_sum+get_Cost_Benefit(BenefitMatrix[i,],CatchSeq,temp_Fleet_Catch[j,9])
           }
         }
         
