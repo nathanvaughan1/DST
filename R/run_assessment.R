@@ -1184,7 +1184,7 @@ RunTargetForecast<-function(input, output, session){
         shell(paste("cd /d ",dir.run," && ss3 -nohess",sep=""))
         #print("SS ran successfully :)")
         incProgress(0.0, detail = paste0("Finding MSY proxy of SPR = ",input$TargetValue," - search loop ",(Search.Iters+1)," of probably 3-5 (max 30). Reading output")) #0.4 total
-
+        
         output.read<-FALSE
         output.temp<-NULL
         while(output.read==FALSE){
