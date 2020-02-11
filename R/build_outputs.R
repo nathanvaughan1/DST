@@ -289,7 +289,7 @@ buildUpdateQuota<-function(input, output, session){
   incProgress(0.1, detail = paste0("Building output results display"))
 
 
-  
+  if(input$ForecastTarget==6){
   get_Cost_Benefit<-function(Point_value=NULL,Val_series=NULL,Quant_Series=NULL){
     lower_1<-Quant_Series[Quant_Series<=Point_value]
     lower_1<-lower_1[length(lower_1)]
@@ -330,7 +330,7 @@ buildUpdateQuota<-function(input, output, session){
     BenefitMatrix[i,1]<-BenefitMatrix[i,2]
     BenefitMatrix[i,(nCatches+2)]<-BenefitMatrix[i,(nCatches+1)]
   }
-  
+  }
   removeUI("#currOutput>*",multiple=TRUE,immediate=TRUE)
   removeUI("#currOutput",multiple=TRUE,immediate=TRUE)
   newDiv("QuotaForecast","currOutput")
@@ -1112,7 +1112,7 @@ buildKobeMatrix<-function(input,output,session,iteration,MSYoutput=NULL){
 #' @author Nathan Vaughan
 #' @keywords interface management
 saveCurrResults<-function(input,output,session,baseSaveName){
-  
+  if(input$ForecastTarget==6){
   get_Cost_Benefit<-function(Point_value=NULL,Val_series=NULL,Quant_Series=NULL){
     lower_1<-Quant_Series[Quant_Series<=Point_value]
     lower_1<-lower_1[length(lower_1)]
@@ -1153,7 +1153,7 @@ saveCurrResults<-function(input,output,session,baseSaveName){
     BenefitMatrix[i,1]<-BenefitMatrix[i,2]
     BenefitMatrix[i,(nCatches+2)]<-BenefitMatrix[i,(nCatches+1)]
   }
-  
+  }
   color <- colors()[grep('gr(a|e)y', colors(), invert = T)]
   color <- color[8:433]
   color <- sample(color,length(color))
