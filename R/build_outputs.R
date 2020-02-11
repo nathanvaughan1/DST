@@ -426,15 +426,17 @@ buildUpdateQuota<-function(input, output, session){
     for(i in unique(CatchOut1[,4])){
       if(data.run$units_of_catch[i]==1){
         catch_Col_temp<-6
+        Catch_scale<-2204.62
       }else{
         catch_Col_temp<-8
+        Catch_scale<-1000
       }
       CatchOut1Cost[which(CatchOut1[,4]==i)]<-vapply(CatchOut1[which(CatchOut1[,4]==i),11],get_Cost_Benefit,Val_series=CostMatrix[i,],Quant_Series=FSeq,FUN.VALUE = 1)
-      CatchOut1Benefit[which(CatchOut1[,4]==i)]<-vapply(CatchOut1[which(CatchOut1[,4]==i),catch_Col_temp],get_Cost_Benefit,Val_series=BenefitMatrix[i,],Quant_Series=CatchSeq,FUN.VALUE = 1)
+      CatchOut1Benefit[which(CatchOut1[,4]==i)]<-vapply(CatchOut1[which(CatchOut1[,4]==i),catch_Col_temp],get_Cost_Benefit,Val_series=Catch_scale*BenefitMatrix[i,],Quant_Series=Catch_scale*CatchSeq,FUN.VALUE = 1)
       CatchOutMSY1Cost[which(CatchOutMSY1[,4]==i)]<-vapply(CatchOutMSY1[which(CatchOutMSY1[,4]==i),11],get_Cost_Benefit,Val_series=CostMatrix[i,],Quant_Series=FSeq,FUN.VALUE = 1)
-      CatchOutMSY1Benefit[which(CatchOutMSY1[,4]==i)]<-vapply(CatchOutMSY1[which(CatchOutMSY1[,4]==i),catch_Col_temp],get_Cost_Benefit,Val_series=BenefitMatrix[i,],Quant_Series=CatchSeq,FUN.VALUE = 1)
+      CatchOutMSY1Benefit[which(CatchOutMSY1[,4]==i)]<-vapply(CatchOutMSY1[which(CatchOutMSY1[,4]==i),catch_Col_temp],get_Cost_Benefit,Val_series=Catch_scale*BenefitMatrix[i,],Quant_Series=Catch_scale*CatchSeq,FUN.VALUE = 1)
       CatchOutRun1Cost[which(CatchOutRun1[,4]==i)]<-vapply(CatchOutRun1[which(CatchOutRun1[,4]==i),11],get_Cost_Benefit,Val_series=CostMatrix[i,],Quant_Series=FSeq,FUN.VALUE = 1)
-      CatchOutRun1Benefit[which(CatchOutRun1[,4]==i)]<-vapply(CatchOutRun1[which(CatchOutRun1[,4]==i),catch_Col_temp],get_Cost_Benefit,Val_series=BenefitMatrix[i,],Quant_Series=CatchSeq,FUN.VALUE = 1)
+      CatchOutRun1Benefit[which(CatchOutRun1[,4]==i)]<-vapply(CatchOutRun1[which(CatchOutRun1[,4]==i),catch_Col_temp],get_Cost_Benefit,Val_series=Catch_scale*BenefitMatrix[i,],Quant_Series=Catch_scale*CatchSeq,FUN.VALUE = 1)
     }
     
     CatchOut1<-cbind(CatchOut1[,1:16],CatchOut1[,14:16])
@@ -1190,15 +1192,17 @@ saveCurrResults<-function(input,output,session,baseSaveName){
       
       if(data.run$units_of_catch[i]==1){
         catch_Col_temp<-6
+        Catch_scale<-2204.62
       }else{
         catch_Col_temp<-8
+        Catch_scale<-1000
       }
       CatchOut1Cost[which(CatchOut1[,4]==i)]<-vapply(CatchOut1[which(CatchOut1[,4]==i),11],get_Cost_Benefit,Val_series=CostMatrix[i,],Quant_Series=FSeq,FUN.VALUE = 1)
-      CatchOut1Benefit[which(CatchOut1[,4]==i)]<-vapply(CatchOut1[which(CatchOut1[,4]==i),catch_Col_temp],get_Cost_Benefit,Val_series=BenefitMatrix[i,],Quant_Series=CatchSeq,FUN.VALUE = 1)
+      CatchOut1Benefit[which(CatchOut1[,4]==i)]<-vapply(CatchOut1[which(CatchOut1[,4]==i),catch_Col_temp],get_Cost_Benefit,Val_series=Catch_scale*BenefitMatrix[i,],Quant_Series=Catch_scale*CatchSeq,FUN.VALUE = 1)
       CatchOutMSY1Cost[which(CatchOut1[,4]==i)]<-vapply(CatchOutMSY1[which(CatchOut1[,4]==i),11],get_Cost_Benefit,Val_series=CostMatrix[i,],Quant_Series=FSeq,FUN.VALUE = 1)
-      CatchOutMSY1Benefit[which(CatchOut1[,4]==i)]<-vapply(CatchOutMSY1[which(CatchOut1[,4]==i),catch_Col_temp],get_Cost_Benefit,Val_series=BenefitMatrix[i,],Quant_Series=CatchSeq,FUN.VALUE = 1)
+      CatchOutMSY1Benefit[which(CatchOut1[,4]==i)]<-vapply(CatchOutMSY1[which(CatchOut1[,4]==i),catch_Col_temp],get_Cost_Benefit,Val_series=Catch_scale*BenefitMatrix[i,],Quant_Series=Catch_scale*CatchSeq,FUN.VALUE = 1)
       CatchOutRun1Cost[which(CatchOut1[,4]==i)]<-vapply(CatchOutRun1[which(CatchOut1[,4]==i),11],get_Cost_Benefit,Val_series=CostMatrix[i,],Quant_Series=FSeq,FUN.VALUE = 1)
-      CatchOutRun1Benefit[which(CatchOut1[,4]==i)]<-vapply(CatchOutRun1[which(CatchOut1[,4]==i),catch_Col_temp],get_Cost_Benefit,Val_series=BenefitMatrix[i,],Quant_Series=CatchSeq,FUN.VALUE = 1)
+      CatchOutRun1Benefit[which(CatchOut1[,4]==i)]<-vapply(CatchOutRun1[which(CatchOut1[,4]==i),catch_Col_temp],get_Cost_Benefit,Val_series=Catch_scale*BenefitMatrix[i,],Quant_Series=Catch_scale*CatchSeq,FUN.VALUE = 1)
     }
     
     CatchOut1<-cbind(CatchOut1[,1:16],CatchOut1[,14:16])
