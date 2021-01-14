@@ -157,22 +157,21 @@ This tutorial will detail the capabilities of the decision support tool (DST) us
 To get started click the select assessment drop-down menu as shown in Figure 1 below.    
 
 ![](Tutorial%20manual%20screenshots/Select%20assessment.PNG)
-   
+Figure 1: Decision Support Tool opening screen.
+ 
 You will see a list of options: 1) the "Please select an assessment" prompt; 2) An "Upload new assessment" option; and 3) Multiple additional options for all available assessments contained in your DST assessments folder.  
 1) This is simply a prompting place holder, selecting it will have no effect.   
 2) The upload assessment option shown in figure 2 allows you to import a new assessment from files on you computer. A minimum of two stock synthesis files are required for this, a control file and a data file describing the fishery. The DST is designed in large part to interact with fleet retention and discard mortality values that are a common target of fishery management. However, these functions are difficult to quantify, particularly in data-limited assessments, and many not be included in the uploaded control file due to a lack of data for parameter estimation. In these cases the DST will automatically modify the required files and parameterize these functions with the required base model inferred values. A number of additional files are required to run an SS3 assessment and are also available for optional upload, it is strongly recommended that these are uploaded to ensure you understand there chosen values. However, if they are not available to you the DST will attempt to intelligently generate files with default values. Future efforts will be directed to developing interfaces for modifying these default file values. An assessment name field is also required, this will be the display name shown in the selection drop-down once the assessment has been uploaded. Once all available files are uploaded and a name input clicking the upload assessment button will upload and modify available files, build missing files, run the base assessment to confirm parameters are optimally estimated, and build a dynamic user management interface dependent on the specific features of the assessment.    
 
-```{r echo=FALSE, fig.cap="Figure 2: Upload new assessment screen.", out.width = '75%'}
-knitr::include_graphics("~/Tutorial manual screenshots/Upload assessment.png")
-```
+![](/Tutorial%20manual%20screenshots/Upload%20assessment.PNG)
+Figure 2: Upload new assessment screen.
 
 3) Selection options will also be available for every assessment saved in the DST assessments folder. This includes the "Tutorial"" example we will use here, base assessments distributed with the DST, and any additional assessments you have previously uploaded. Once you select an assessment name the DST will build a dynamic user management interface dependent on the specific features of the assessment *(Note: This can be an intensive process for assessments with seasonal dynamics and/or lots of fleets and therefore require a moderate delay in rendering. During the rendering process the message "Loading and building assessment model" will be displayed and you will see many progress bars popup in the lower right corner of the screen providing further detail. Once the rendering is almost complete the message will change to "Almost ready, preparing for model initialization". This message will finally change to a button labeled "Initialize Interface" click this button to proceed through to the management input page.)*. To proceed with this tutorial select the "Tutorial" option from the assessment selection list and click the "Initialize Interface" once it becomes available.     
 
 *Management input page:* After clicking the "Initialize Interface" button the DST will move to the "management input" tab. At first sight this page is very busy and can be overwhelming, we will break down the components below to explore the three principle sections.    
 
-```{r echo=FALSE, fig.cap="Figure 3: Management input page.", out.width = '100%'}
 ![](Tutorial%20manual%20screenshots/Management%20Input.PNG)
-```
+Figure 3: Management input page.
 
 *Global management input options:* The global management inputs section allows you to set the management start year, stock assessment population targets for calculating optimal fishing, and the expected fishing strategy to be implemented. Optimal fishing target options include:   
 1) Spawning potential ratio, which is calculated as the equilibrium spawning biomass ratio expected for a given F and average recruitment. F will be adjusted such that the average spawning potential ratio during the target year range is equal to the target ratio.   
@@ -182,9 +181,8 @@ knitr::include_graphics("~/Tutorial manual screenshots/Upload assessment.png")
 Implemented fishing strategies available include implementing the optimal estimated strategy, fishing at a fixed fraction of Fmsy, or allocating a fixed constant catch which can be input as a raw value or as a fraction of MSY (fraction of MSY option is displayed if fixed value box is empty).  
 There is also a reset values button to return all values to the base configuration, an update forecast button to run SS3 projections with all current inputs, and a forecast name input which will save the results of the run to a named folder (normally you will overwrite previous results each time you run update forecast).   
 
-```{r echo=FALSE, fig.cap="Figure 4: Projection target option inputs.", out.width = '75%'}
-knitr::include_graphics("~/Tutorial manual screenshots/Projection target options.png")
-```
+![](Tutorial%20manual%20screenshots/Projection%20target%20options.PNG)
+Figure 4: Projection target option inputs.
 
 For this tutorial try changing the optimal fishing target from "Spawning Biomass Ratio" to "Maximize Catch"  
 
@@ -193,45 +191,39 @@ For this tutorial try changing the optimal fishing target from "Spawning Biomass
 2) The fleet specific controls  starts with a radio selector to show allocation fractions to be displayed as annual fractions or by season, this also controls the display of fixed fleet inputs. Input fields are then available for each fleet to set the relative allocation among fleets within each group. Fleet allocations will automatically re-scale to sum to one within each group, check-boxes can also be selected to fix these values.     
 3) Fixed catch inputs are available for each fleet for all years before management starting year. If an allocation fraction is not assigned to a fleet then fixed inputs are also available annually for three years after management is implemented and then as a fixed constant value for all subsequent years.  
 
-```{r echo=FALSE, fig.cap="Figure 5: Allocation and fixed catch inputs.", out.width = '75%'}
-knitr::include_graphics("~/Tutorial manual screenshots/Allocation tab.png")
-```
+![](Tutorial%20manual%20screenshots/Allocation%20tab.PNG)
+Figure 5: Allocation and fixed catch inputs.
 
 For this tutorial try adjusting the group allocation fraction so that the commercial fishery receives 45% of the catch and the recreational receives 55%. Now select the "Recreational Selectivity" tab.   
 
 *Fleet selectivity tabs:* After selecting the "Recreational Selectivity" tab you will see a row for each fleet. Each row is comprised of a selectivity at length plot on the left and four user adjustable selection parameter sliders on the right. The first three sliders allow you to adjust the shape of the logistic retention function through its inflection point, slope, and asymptotic maximum. The final slider adjusts the discard mortality rate.   
 
-```{r echo=FALSE, fig.cap="Figure 6: Fleet retention and discard mortality inputs.", out.width = '75%'}
-knitr::include_graphics("~/Tutorial manual screenshots/Selectivity.png")
-```
+![](Tutorial%20manual%20screenshots/Selectivity.PNG)
+Figure 6: Fleet retention and discard mortality inputs.
 
 For this forecast try setting discard mortality for all recreational fleets to zero. You see this update the plot as the red dead discards disappear (Figure 7). Also go to the "By-catch Selectivity" tab and set discard mortality to zero for "Recreational Closed East" and "Recreational Closed West".   
 
-```{r echo=FALSE, fig.cap="Figure 7: Fleet retention and discard mortality inputs.", out.width = '75%'}
-knitr::include_graphics("~/Tutorial manual screenshots/Zero Discard Mortality.png")
-```
+![](Tutorial%20manual%20screenshots/Zero%20Discard%20Mortality.PNG)
+Figure 7: Fleet retention and discard mortality inputs.
 
 If you select the "Allocations and Catch"" tab and have made all the changes above your screen should look like figure 8 below. You are now ready to run a new forecast but first click the "Forecast Results" tab to view the base model projections.   
 
 *Base assessment results plotting:* Once you click on the "Forecast Results" tab you will see plotting options for the base model results (Figure 8).   
 
-```{r echo=FALSE, fig.cap="Figure 8: Base assessment forecast results interface.", out.width = '75%'}
-knitr::include_graphics("~/Tutorial manual screenshots/Base Results.png")
-```
+![](Tutorial%20manual%20screenshots/Base%20Results.PNG)
+Figure 8: Base assessment forecast results interface.
 
 Here you can see a number of radio button selectors and slider bar inputs and a plot output which will display different outputs depending on the radio and slider selections. Input selectors are first projection display data with options for: A) Landings, B) Dead Discards, C) Harvest Rate, D) SSB, E) Population Biomass, and F) Recruits. Depending on the selection here a number of additional selectors will be available. For all options a years to display slider is shown allowing the year range of the plot to be chosen and if applicable to the assessment options to aggregate results be area and/or season. If landings, dead discards, or harvest rate are selected then an option to display total, group specific, or fleet specific results is shown. If fleet or group specific display is chosen then additional toggles for each fleet or group are shown to allow a choice of which fleets/groups to display. When landings or dead discards are selected a units option is also shown to allow the data to be presented in numbers or weight.   
 
 *Projection results page:* Once you have explored the base results return to the "Management Action" tab and click the "Update Forecast" button. The DST will now build a modified assessment with new fleets which implement the allocation and selectivity patterns you just selected. A search loop will now run to calculate the F required to maximize catch between 2100 and 2114. You will see the progress of this search as a progress bar in the lower right hand corner of the screen (Figure 9).      
 
-```{r echo=FALSE, fig.cap="Figure 9: Running assessment forecast progress box.", out.width = '75%'}
-knitr::include_graphics("~/Tutorial manual screenshots/Running Assessment.png")
-```
+![](Tutorial%20manual%20screenshots/Running%20Assessment.PNG)
+Figure 9: Running assessment forecast progress box.
 
 Once the search is completed the DST will automatically take you to the "Forecast Results" tab which will now be enhanced with additional plotting options and download capabilities. One of these is the Kobe matrix (Figure 10) which which tracks B/Bmsy and F/Fmsy through time. Fmsy and Bmsy are calculated as the values of F and population biomass in your target period assuming that if SPR or Spawning Biomass targets where chosen they where done so as MSY proxies.          
 
-```{r echo=FALSE, fig.cap="Figure 10: Kobe plot results.", out.width = '75%'}
-knitr::include_graphics("~/Tutorial manual screenshots/Kobe Results.png")
-```
+![](Tutorial%20manual%20screenshots/Kobe%20Results.PNG)
+Figure 10: Kobe plot results.
 
 The new results also allow comparison between the base, new target, and applied fishing results. These can be displayed as absolute differences, percentage differences, or as a ratio of one to the other. A range of download options are also available called: 1) "ICCAT"; 2) "Displayed Figure with Data"; and 3) "SS3 Report file".    
 1) The ICCAT selection downloads a csv file containing Yield, SSB, Biomass, and F at three time points of the first year of management, the tenth year of management, and equilibrium (i.e. MSY). The first and tenth year relative to equilibrium are also included.    
