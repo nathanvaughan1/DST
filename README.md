@@ -156,7 +156,7 @@ This tutorial will detail the capabilities of the decision support tool (DST) us
 *Assessment selection page:* The assessment selection page provides your first introduction to the DST.   
 To get started click the select assessment drop-down menu as shown in Figure 1 below.    
 
-![](Tutorial%20manual%20screenshots/Select%20assessment.png)
+![](Tutorial%20manual%20screenshots/Select%20assessment.PNG)
    
 You will see a list of options: 1) the "Please select an assessment" prompt; 2) An "Upload new assessment" option; and 3) Multiple additional options for all available assessments contained in your DST assessments folder.  
 1) This is simply a prompting place holder, selecting it will have no effect.   
