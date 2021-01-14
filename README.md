@@ -171,7 +171,7 @@ knitr::include_graphics("~/Tutorial manual screenshots/Upload assessment.png")
 *Management input page:* After clicking the "Initialize Interface" button the DST will move to the "management input" tab. At first sight this page is very busy and can be overwhelming, we will break down the components below to explore the three principle sections.    
 
 ```{r echo=FALSE, fig.cap="Figure 3: Management input page.", out.width = '100%'}
-knitr::include_graphics("~/Tutorial manual screenshots/Management Input.png")
+![](Tutorial%20manual%20screenshots/Management%20Input.PNG)
 ```
 
 *Global management input options:* The global management inputs section allows you to set the management start year, stock assessment population targets for calculating optimal fishing, and the expected fishing strategy to be implemented. Optimal fishing target options include:   
