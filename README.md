@@ -156,12 +156,8 @@ This tutorial will detail the capabilities of the decision support tool (DST) us
 *Assessment selection page:* The assessment selection page provides your first introduction to the DST.   
 To get started click the select assessment drop-down menu as shown in Figure 1 below.    
 
-```{r echo=FALSE, fig.cap="Figure 1: Decision Support Tool opening screen.", out.width = '75%'}
-knitr::include_graphics("~/Tutorial manual screenshots/Select assessment.png")
-```
+![](Tutorial%20manual%20screenshots/Select%20assessment.png)
    
-
-
 You will see a list of options: 1) the "Please select an assessment" prompt; 2) An "Upload new assessment" option; and 3) Multiple additional options for all available assessments contained in your DST assessments folder.  
 1) This is simply a prompting place holder, selecting it will have no effect.   
 2) The upload assessment option shown in figure 2 allows you to import a new assessment from files on you computer. A minimum of two stock synthesis files are required for this, a control file and a data file describing the fishery. The DST is designed in large part to interact with fleet retention and discard mortality values that are a common target of fishery management. However, these functions are difficult to quantify, particularly in data-limited assessments, and many not be included in the uploaded control file due to a lack of data for parameter estimation. In these cases the DST will automatically modify the required files and parameterize these functions with the required base model inferred values. A number of additional files are required to run an SS3 assessment and are also available for optional upload, it is strongly recommended that these are uploaded to ensure you understand there chosen values. However, if they are not available to you the DST will attempt to intelligently generate files with default values. Future efforts will be directed to developing interfaces for modifying these default file values. An assessment name field is also required, this will be the display name shown in the selection drop-down once the assessment has been uploaded. Once all available files are uploaded and a name input clicking the upload assessment button will upload and modify available files, build missing files, run the base assessment to confirm parameters are optimally estimated, and build a dynamic user management interface dependent on the specific features of the assessment.    
